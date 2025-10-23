@@ -208,8 +208,8 @@ def render_health_input():
         <div style="text-align: center; margin-bottom: 2rem; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
             <h1 style="color: white; margin-bottom: 1rem;">💜 Your Health Journey</h1>
             <p style="font-size: 1.2rem; margin: 0; opacity: 0.9;">We understand that sharing your health information is personal and important. Your data helps us provide better, more personalized insights for your menopause journey.</p>
-        </div>
-        """,
+    </div>
+    """,
         unsafe_allow_html=True,
     )
 
@@ -219,8 +219,8 @@ def render_health_input():
         <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; border-left: 4px solid #6B46C1;">
             <h4 style="color: #6B46C1; margin-top: 0;">🤗 Your Privacy Matters</h4>
             <p style="color: #6B46C1; margin: 0; line-height: 1.6;">All your health information is processed securely and privately. We use this data only to provide you with personalized insights and never share it with third parties. You're in control of your health journey.</p>
-        </div>
-        """,
+    </div>
+    """,
         unsafe_allow_html=True,
     )
 
@@ -354,17 +354,17 @@ def render_health_input():
         if submitted:
             # Prepare health data
             health_data = {
-                "age": age,
-                "bmi": bmi,
-                "fsh": fsh,
+                    "age": age,
+                    "bmi": bmi,
+                    "fsh": fsh,
                 "amh": amh,
-                "estradiol": estradiol,
+                    "estradiol": estradiol,
                 "last_period_months": last_period,
-                "hot_flashes": hot_flashes,
-                "mood_changes": mood_changes,
-                "sleep_quality": sleep_quality,
-                "stress_level": stress_level,
-                "smoking": smoking,
+                    "hot_flashes": hot_flashes,
+                    "mood_changes": mood_changes,
+                    "sleep_quality": sleep_quality,
+                    "stress_level": stress_level,
+                    "smoking": smoking,
                 "exercise": exercise,
                 "family_history": family_history,
                 "diabetes": diabetes,
@@ -387,25 +387,25 @@ def render_health_input():
                 for warning in warnings:
                     st.warning(f"• {warning}")
 
-            # Store in session state
+                # Store in session state
             st.session_state.user_data = health_data
 
-            # Get predictions
+                # Get predictions
             with st.spinner("🔮 Analyzing your health data..."):
-                try:
+                    try:
                     from app_streamlit_main import get_predictions
 
                     predictions = get_predictions(health_data)
-                    st.session_state.predictions = predictions
+                            st.session_state.predictions = predictions
 
                     # Show success message
                     st.success("✅ Predictions generated successfully!")
-                    st.balloons()
+                            st.balloons()
 
                     # Redirect to predictions page
                     st.rerun()
 
-                except Exception as e:
+                    except Exception as e:
                     st.error(f"❌ Error generating predictions: {str(e)}")
                     st.error("Please try again or contact support if the issue persists.")
 
@@ -556,7 +556,7 @@ def render_health_input():
                     st.markdown(
                         f"{priority_emoji} **{rec.get('title', 'Recommendation')}**: {rec.get('description', '')}"
                     )
-            else:
+        else:
                 st.info("No recommendations available")
 
     st.markdown("</div>", unsafe_allow_html=True)

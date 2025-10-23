@@ -176,7 +176,7 @@ def create_wellness_progress_chart(data):
         annotation_text="Target: 75",
         annotation_position="top right",
     )
-
+    
     fig.update_layout(
         title="7-Day Wellness Progress",
         xaxis_title="Date",
@@ -303,16 +303,16 @@ def render_wellness_dashboard():
     # Empathetic header
     messages = get_empathetic_messages()
     welcome_msg = random.choice(messages["welcome"])
-
-    st.markdown(
-        f"""
+        
+        st.markdown(
+            f"""
         <div style="text-align: center; margin-bottom: 2rem; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
             <h1 style="color: white; margin-bottom: 1rem;">💜 Your Wellness Journey</h1>
             <p style="font-size: 1.2rem; margin: 0; opacity: 0.9;">{welcome_msg}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Wearable sync simulation
     st.markdown("### 📱 Wearable Device Sync")
@@ -343,7 +343,7 @@ def render_wellness_dashboard():
     progress_color = (
         "green" if wellness_score >= 75 else "orange" if wellness_score >= 50 else "red"
     )
-
+    
     st.markdown(
         f"""
         <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin: 1rem 0;">
@@ -421,15 +421,15 @@ def render_wellness_dashboard():
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown(
-            f"""
+    st.markdown(
+        f"""
             <div style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0;">
                 <h4 style="color: #8B4513; margin-top: 0;">💪 Encouragement</h4>
                 <p style="color: #8B4513; margin: 0;">{encouragement_msg}</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     with col2:
         st.markdown(
@@ -446,12 +446,12 @@ def render_wellness_dashboard():
     st.markdown("### 🚀 Quick Actions")
 
     col1, col2, col3, col4 = st.columns(4)
-
+    
     with col1:
         if st.button("📝 Log Symptoms", width="stretch"):
             st.session_state.current_page = "Health Input"
             st.rerun()
-
+    
     with col2:
         if st.button("📊 View Analysis", width="stretch"):
             st.session_state.current_page = "Model Analysis"

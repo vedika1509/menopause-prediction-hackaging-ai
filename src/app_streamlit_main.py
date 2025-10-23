@@ -1603,6 +1603,15 @@ def main():
         if st.button("🔍 Check Model Details", use_container_width=True):
             test_api_connection()
 
+        # Show model status information
+        if st.button("📊 Model Status", use_container_width=True):
+            try:
+                from streamlit_cloud_fix import show_model_loading_info
+
+                show_model_loading_info()
+            except ImportError:
+                st.error("Model status checker not available")
+
         # Footer
         st.markdown(
             """
