@@ -30,13 +30,35 @@ def load_models_and_data():
 
     for task in tasks:
         try:
+            # Load model
             model_path = f"models/task_specific_{task}/best_model.pkl"
+            model = None
             if os.path.exists(model_path):
                 with open(model_path, "rb") as f:
-                    models[task] = pickle.load(f)
+                    model = pickle.load(f)
                 print(f"Loaded {task} model")
+
+            # Load scaler
+            scaler_path = f"models/task_specific_{task}/scaler.pkl"
+            scaler = None
+            if os.path.exists(scaler_path):
+                with open(scaler_path, "rb") as f:
+                    scaler = pickle.load(f)
+                print(f"Loaded {task} scaler")
+
+            # Load features
+            features_path = f"models/feature_selection_{task}/selected_features.pkl"
+            features = None
+            if os.path.exists(features_path):
+                with open(features_path, "rb") as f:
+                    features = pickle.load(f)
+                print(f"Loaded {task} features")
+
+            if model and scaler and features is not None:
+                models[task] = {"model": model, "scaler": scaler, "features": features}
             else:
-                print(f"No model found for {task}")
+                print(f"Missing components for {task} model")
+
         except Exception as e:
             print(f"Error loading {task} model: {e}")
 
@@ -263,7 +285,13 @@ def create_symptom_prediction_plots(models, df):
     symptoms = ["Hot Flash Severity", "Mood Severity", "Sleep Severity"]
 
     for i, symptom in enumerate(symptoms):
-        axes[i].scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
+        # Handle both 1D and 2D prediction outputs
+        if y_pred.ndim == 1:
+            y_pred_i = y_pred
+        else:
+            y_pred_i = y_pred[:, i] if y_pred.shape[1] > i else y_pred[:, 0]
+
+        axes[i].scatter(y_true[:, i], y_pred_i, alpha=0.6)
         axes[i].plot([0, 10], [0, 10], "r--", label="Perfect Prediction")
         axes[i].set_xlabel(f"Actual {symptom}")
         axes[i].set_ylabel(f"Predicted {symptom}")
@@ -340,12 +368,12 @@ def main():
     # Confusion matrices for classification
     if "classification" in models and "classification" in datasets:
         print("Creating confusion matrices...")
-        create_confusion_matrices(models, datasets)
+        create_confusion_matrices(models, datasets["classification"])
 
     # Calibration plots
     if models and datasets:
         print("Creating calibration plots...")
-        create_calibration_plots(models, datasets)
+        create_calibration_plots(models, datasets["classification"])
 
     # Kaplan-Meier curves (if we have survival data)
     if "survival" in datasets:
@@ -355,12 +383,12 @@ def main():
     # Symptom prediction plots
     if "symptom" in models and "symptom" in datasets:
         print("Creating symptom prediction plots...")
-        create_symptom_prediction_plots(models, datasets)
+        create_symptom_prediction_plots(models, datasets["symptom"])
 
     # Feature importance plots
     if models and datasets:
         print("Creating feature importance plots...")
-        create_feature_importance_plots(models, datasets)
+        create_feature_importance_plots(models)
 
     print("\n=== Static Reports Generation Completed ===")
     print("All reports saved to reports/static/ directory")

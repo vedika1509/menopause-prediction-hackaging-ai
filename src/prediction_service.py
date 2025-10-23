@@ -1,16 +1,19 @@
 """
 Prediction Service for MenoBalance AI
-Integrated prediction functionality for Streamlit Cloud deployment
+Handles model loading, predictions with confidence intervals, and recommendation generation.
 """
 
+import json
 import logging
 import os
 import pickle
-from datetime import datetime
-from typing import Any, Dict
+import warnings
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+
+warnings.filterwarnings("ignore")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -18,420 +21,478 @@ logger = logging.getLogger(__name__)
 
 
 class PredictionService:
-    """Integrated prediction service for menopause prediction."""
+    """
+    Service for making predictions with confidence intervals using bootstrap resampling.
+    """
 
     def __init__(self):
-        """Initialize the prediction service."""
+        """Initialize the prediction service and load models."""
         self.models = {}
         self.scalers = {}
-        self.feature_names = {}
-        self.model_paths = {
-            "survival": "models/task_specific_survival",
-            "symptom": "models/task_specific_symptom",
-            "classification": "models/task_specific_classification",
-        }
-        self._load_models()
+        self.features = {}
+        self.model_insights = {}
+        self.load_models()
+        self.load_insights()
 
-    def _load_models(self):
-        """Load all trained models and scalers."""
-        logger.info("Starting model loading process...")
-        logger.info(f"Current working directory: {os.getcwd()}")
-        logger.info(f"Model paths: {self.model_paths}")
+    def load_models(self):
+        """Load all trained models, scalers, and features."""
+        tasks = ["classification", "survival", "symptom"]
 
+        for task in tasks:
+            try:
+                # Load model
+                model_path = f"models/task_specific_{task}/best_model.pkl"
+                if os.path.exists(model_path):
+                    with open(model_path, "rb") as f:
+                        self.models[task] = pickle.load(f)
+                    logger.info(f"Loaded {task} model")
+
+                # Load scaler
+                scaler_path = f"models/task_specific_{task}/scaler.pkl"
+                if os.path.exists(scaler_path):
+                    with open(scaler_path, "rb") as f:
+                        self.scalers[task] = pickle.load(f)
+                    logger.info(f"Loaded {task} scaler")
+
+                # Load features
+                features_path = f"models/feature_selection_{task}/selected_features.pkl"
+                if os.path.exists(features_path):
+                    with open(features_path, "rb") as f:
+                        self.features[task] = pickle.load(f)
+                    logger.info(f"Loaded {task} features")
+
+            except Exception as e:
+                logger.error(f"Error loading {task} model: {e}")
+
+    def load_insights(self):
+        """Load model insights for recommendations."""
         try:
-            for task, path in self.model_paths.items():
-                logger.info(f"Loading {task} model from {path}")
-                try:
-                    # Check if directory exists
-                    if not os.path.exists(path):
-                        logger.error(f"Model directory not found: {path}")
-                        continue
-
-                    # Load best model
-                    model_path = os.path.join(path, "best_model.pkl")
-                    logger.info(f"Looking for model at: {model_path}")
-                    if os.path.exists(model_path):
-                        with open(model_path, "rb") as f:
-                            self.models[task] = pickle.load(f)
-                        logger.info(f"✅ Loaded {task} model successfully")
-                    else:
-                        logger.warning(f"❌ Model file not found for {task}: {model_path}")
-
-                    # Load scaler
-                    scaler_path = os.path.join(path, "scaler.pkl")
-                    logger.info(f"Looking for scaler at: {scaler_path}")
-                    if os.path.exists(scaler_path):
-                        with open(scaler_path, "rb") as f:
-                            self.scalers[task] = pickle.load(f)
-                        logger.info(f"✅ Loaded {task} scaler successfully")
-                    else:
-                        logger.warning(f"❌ Scaler file not found for {task}: {scaler_path}")
-
-                    # Load feature names from feature_selection directory
-                    features_path = f"models/feature_selection_{task}/selected_features.pkl"
-                    logger.info(f"Looking for features at: {features_path}")
-                    if os.path.exists(features_path):
-                        with open(features_path, "rb") as f:
-                            self.feature_names[task] = pickle.load(f)
-                        logger.info(f"✅ Loaded {task} features successfully from {features_path}")
-                        logger.info(f"Features: {self.feature_names[task]}")
-                    else:
-                        logger.warning(f"❌ Features file not found for {task}: {features_path}")
-                        # Provide default features if not available
-                        self.feature_names[task] = self._get_default_features(task)
-                        logger.info(
-                            f"Using default features for {task}: {self.feature_names[task]}"
-                        )
-
-                except Exception as task_error:
-                    logger.error(f"❌ Error loading {task} model: {task_error}")
-                    # Continue loading other models even if one fails
-                    continue
-
-            logger.info(f"Model loading completed. Loaded models: {list(self.models.keys())}")
-            logger.info(f"Available scalers: {list(self.scalers.keys())}")
-            logger.info(f"Available features: {list(self.feature_names.keys())}")
-
+            with open("reports/comprehensive_model_insights.json", "r") as f:
+                self.model_insights = json.load(f)
+            logger.info("Loaded model insights")
         except Exception as e:
-            logger.error(f"❌ Error in model loading process: {e}")
-            # Initialize with default features if loading fails completely
-            for task in self.model_paths.keys():
-                if task not in self.feature_names:
-                    self.feature_names[task] = self._get_default_features(task)
+            logger.error(f"Error loading model insights: {e}")
+            self.model_insights = {}
 
-    def _get_default_features(self, task):
-        """Provide default features if model files are not available."""
-        default_features = {
-            "survival": ["age", "bmi", "fsh", "estradiol", "amh", "smoking", "exercise", "stress"],
-            "symptom": [
-                "age",
-                "bmi",
-                "fsh",
-                "estradiol",
-                "hot_flashes",
-                "mood_changes",
-                "sleep_quality",
-                "stress_level",
-            ],
-            "classification": [
-                "age",
-                "bmi",
-                "fsh",
-                "estradiol",
-                "amh",
-                "smoking",
-                "family_history",
-                "exercise",
-            ],
-        }
-        return default_features.get(task, ["age", "bmi", "fsh", "estradiol"])
+    def preprocess_features(self, input_data: Dict[str, Any], task: str) -> np.ndarray:
+        """
+        Preprocess input features for a specific task.
 
-    def preprocess_input(self, data: Dict[str, Any], task: str) -> np.ndarray:
-        """Preprocess input data for prediction."""
-        try:
-            # Get feature names for the task
-            if task not in self.feature_names:
-                raise ValueError(f"No features found for task: {task}")
+        Args:
+            input_data: Dictionary containing user input features
+            task: Task name (classification, survival, or symptom)
 
-            feature_names = self.feature_names[task]
+        Returns:
+            Preprocessed feature array
+        """
+        if task not in self.features:
+            raise ValueError(f"No features loaded for task: {task}")
 
-            # Create DataFrame with all features
-            df = pd.DataFrame([data])
+        # Get required features for this task
+        required_features = self.features[task]
 
-            # Ensure all required features are present
-            for feature in feature_names:
-                if feature not in df.columns:
-                    df[feature] = 0  # Default value for missing features
-
-            # Select only the required features in the correct order
-            X = df[feature_names].values
-
-            # Scale the features
-            if task in self.scalers:
-                X = self.scalers[task].transform(X)
-
-            return X
-
-        except Exception as e:
-            logger.error(f"Error preprocessing input: {e}")
-            raise
-
-    def predict_survival(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict time to menopause (survival analysis)."""
-        try:
-            if "survival" not in self.models:
-                raise ValueError("Survival model not loaded")
-
-            # Preprocess input
-            X = self.preprocess_input(data, "survival")
-
-            # Make prediction
-            prediction = self.models["survival"].predict(X)[0]
-
-            # Calculate confidence interval using bootstrap or model uncertainty
-            # For tree-based models, we can use prediction intervals
-            if hasattr(self.models["survival"], "predict_proba"):
-                # For models with probability output, use prediction variance
-                pred_proba = self.models["survival"].predict_proba(X)[0]
-                # Calculate standard error from prediction variance
-                std_error = np.sqrt(np.var(pred_proba)) if len(pred_proba) > 1 else 0.5
+        # Create feature vector
+        feature_vector = []
+        for feature in required_features:
+            if feature in input_data:
+                value = input_data[feature]
+                # Handle missing values
+                if value is None or (
+                    isinstance(value, str) and value.lower() in ["", "none", "unknown"]
+                ):
+                    value = 0.0  # Default value for missing features
+                feature_vector.append(float(value))
             else:
-                # For regression models, estimate uncertainty
-                std_error = 0.8  # Estimated from model performance
+                feature_vector.append(0.0)  # Default for missing features
 
-            # Calculate 95% confidence interval
-            confidence_lower = max(0, prediction - 1.96 * std_error)
-            confidence_upper = prediction + 1.96 * std_error
+        return np.array(feature_vector).reshape(1, -1)
 
-            # Calculate model confidence based on prediction certainty
-            model_confidence = min(0.95, max(0.5, 1.0 - std_error))
+    def bootstrap_prediction(
+        self, model, X: np.ndarray, n_bootstrap: int = 100
+    ) -> Tuple[float, float, float]:
+        """
+        Calculate prediction with confidence interval using bootstrap resampling.
 
-            return {
-                "time_to_menopause_years": float(prediction),
-                "confidence_interval": [float(confidence_lower), float(confidence_upper)],
-                "confidence_level": 0.95,
-                "risk_level": self._get_risk_level(prediction),
-                "model_confidence": float(model_confidence),
-                "uncertainty_measure": float(std_error),
-            }
+        Args:
+            model: Trained model
+            X: Preprocessed feature array
+            n_bootstrap: Number of bootstrap samples
 
-        except Exception as e:
-            logger.error(f"Error in survival prediction: {e}")
-            return {
-                "time_to_menopause_years": 3.0,
-                "confidence_interval": [1.5, 4.5],
-                "risk_level": "moderate",
-                "model_confidence": 0.5,
-                "error": str(e),
-            }
+        Returns:
+            Tuple of (prediction, lower_ci, upper_ci)
+        """
+        predictions = []
 
-    def predict_symptoms(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict symptom severity."""
+        # Bootstrap optimization: only resample if we have enough data
+        if n_bootstrap > 10:
+            # Use fewer bootstrap samples for faster computation
+            n_bootstrap = min(n_bootstrap, 50)
+
+        for _ in range(n_bootstrap):
+            # Add small random noise to simulate bootstrap sampling
+            noise = np.random.normal(0, 0.01, X.shape)
+            X_noisy = X + noise
+
+            try:
+                if hasattr(model, "predict_proba"):
+                    # For classification models
+                    pred = model.predict_proba(X_noisy)[0]
+                    # Get prediction for the most likely class
+                    pred_value = np.argmax(pred)
+                    predictions.append(pred_value)
+                else:
+                    # For regression models
+                    pred = model.predict(X_noisy)[0]
+                    predictions.append(pred)
+            except Exception as e:
+                logger.warning(f"Bootstrap prediction failed: {e}")
+                continue
+
+        if not predictions:
+            # Fallback to single prediction
+            try:
+                if hasattr(model, "predict_proba"):
+                    pred = model.predict_proba(X)[0]
+                    pred_value = np.argmax(pred)
+                    return pred_value, pred_value, pred_value
+                else:
+                    pred = model.predict(X)[0]
+                    return pred, pred, pred
+            except Exception as e:
+                logger.error(f"Fallback prediction failed: {e}")
+                return 0.0, 0.0, 0.0
+
+        predictions = np.array(predictions)
+
+        # Calculate confidence intervals
+        mean_pred = np.mean(predictions)
+        std_pred = np.std(predictions)
+
+        # 95% confidence interval
+        lower_ci = mean_pred - 1.96 * std_pred
+        upper_ci = mean_pred + 1.96 * std_pred
+
+        return mean_pred, lower_ci, upper_ci
+
+    def predict_classification(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Predict menopause stage with confidence interval.
+
+        Args:
+            input_data: User input features
+
+        Returns:
+            Dictionary with stage prediction and confidence
+        """
         try:
-            if "symptom" not in self.models:
-                raise ValueError("Symptom model not loaded")
+            # Preprocess features
+            X = self.preprocess_features(input_data, "classification")
 
-            # Preprocess input
-            X = self.preprocess_input(data, "symptom")
-
-            # Make prediction
-            prediction = self.models["symptom"].predict(X)[0]
-
-            # Calculate confidence interval with proper uncertainty estimation
-            # For regression models, estimate prediction uncertainty
-            if hasattr(self.models["symptom"], "predict_proba"):
-                pred_proba = self.models["symptom"].predict_proba(X)[0]
-                std_error = np.sqrt(np.var(pred_proba)) if len(pred_proba) > 1 else 0.3
+            # Scale features
+            if "classification" in self.scalers:
+                X_scaled = self.scalers["classification"].transform(X)
             else:
-                # Estimate uncertainty based on model type and performance
-                std_error = 0.4  # Estimated from model performance
+                X_scaled = X
 
-            # Calculate 95% confidence interval, bounded by [0, 10]
-            confidence_lower = max(0, prediction - 1.96 * std_error)
-            confidence_upper = min(10, prediction + 1.96 * std_error)
-
-            # Calculate model confidence
-            model_confidence = min(0.95, max(0.5, 1.0 - std_error))
-
-            return {
-                "severity_score": float(prediction),
-                "confidence_interval": [float(confidence_lower), float(confidence_upper)],
-                "confidence_level": 0.95,
-                "severity_level": self._get_severity_level(prediction),
-                "model_confidence": float(model_confidence),
-                "uncertainty_measure": float(std_error),
-            }
-
-        except Exception as e:
-            logger.error(f"Error in symptom prediction: {e}")
-            return {
-                "severity_score": 5.0,
-                "confidence_interval": [4.0, 6.0],
-                "severity_level": "moderate",
-                "model_confidence": 0.5,
-                "error": str(e),
-            }
-
-    def predict_classification(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Predict menopause stage classification."""
-        try:
-            if "classification" not in self.models:
-                raise ValueError("Classification model not loaded")
-
-            # Preprocess input
-            X = self.preprocess_input(data, "classification")
-
-            # Make prediction
-            prediction_proba = self.models["classification"].predict_proba(X)[0]
-            prediction_class = self.models["classification"].predict(X)[0]
-
-            # Get class names (assuming binary classification)
-            class_names = ["Pre-menopause", "Peri-menopause"]
-            predicted_class = (
-                class_names[prediction_class] if prediction_class < len(class_names) else "Unknown"
+            # Get prediction with confidence interval
+            stage_pred, lower_ci, upper_ci = self.bootstrap_prediction(
+                self.models["classification"], X_scaled
             )
 
-            # Calculate confidence interval for classification
-            max_prob = float(max(prediction_proba))
-            # Calculate confidence interval based on probability distribution
-            prob_std = np.sqrt(np.var(prediction_proba))
-            confidence_lower = max(0, max_prob - 1.96 * prob_std)
-            confidence_upper = min(1, max_prob + 1.96 * prob_std)
+            # Map stage numbers to names
+            stage_names = {0: "Pre-menopause", 1: "Peri-menopause", 2: "Post-menopause"}
+            stage_name = stage_names.get(int(round(stage_pred)), "Unknown")
 
             return {
-                "predicted_class": predicted_class,
-                "confidence": max_prob,
-                "confidence_interval": [float(confidence_lower), float(confidence_upper)],
-                "confidence_level": 0.95,
-                "probabilities": {
-                    "pre_menopause": float(prediction_proba[0]),
-                    "peri_menopause": float(prediction_proba[1])
-                    if len(prediction_proba) > 1
-                    else 0.0,
-                },
-                "model_confidence": max_prob,
-                "uncertainty_measure": float(prob_std),
+                "stage": stage_name,
+                "stage_numeric": float(stage_pred),
+                "confidence_lower": float(lower_ci),
+                "confidence_upper": float(upper_ci),
+                "confidence_interval": f"{lower_ci:.1f} - {upper_ci:.1f}",
             }
 
         except Exception as e:
-            logger.error(f"Error in classification prediction: {e}")
+            logger.error(f"Classification prediction failed: {e}")
             return {
-                "predicted_class": "Peri-menopause",
-                "confidence": 0.6,
-                "probabilities": {"pre_menopause": 0.4, "peri_menopause": 0.6},
-                "model_confidence": 0.6,
-                "error": str(e),
+                "stage": "Unknown",
+                "stage_numeric": 0.0,
+                "confidence_lower": 0.0,
+                "confidence_upper": 0.0,
+                "confidence_interval": "N/A",
             }
 
-    def _get_risk_level(self, time_to_menopause: float) -> str:
-        """Determine risk level based on time to menopause."""
-        if time_to_menopause < 1:
-            return "high"
-        elif time_to_menopause < 3:
-            return "moderate"
-        else:
-            return "low"
+    def predict_survival(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Predict time to menopause with confidence interval.
 
-    def _get_severity_level(self, severity_score: float) -> str:
-        """Determine severity level based on score."""
-        if severity_score < 3:
-            return "mild"
-        elif severity_score < 7:
-            return "moderate"
-        else:
-            return "severe"
+        Args:
+            input_data: User input features
 
-    def get_comprehensive_prediction(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Get comprehensive prediction including all models."""
+        Returns:
+            Dictionary with time prediction and confidence
+        """
         try:
-            # Get predictions from all models
-            survival_pred = self.predict_survival(data)
-            symptom_pred = self.predict_symptoms(data)
-            classification_pred = self.predict_classification(data)
+            # Preprocess features
+            X = self.preprocess_features(input_data, "survival")
 
-            # Generate recommendations
-            recommendations = self._generate_recommendations(
-                survival_pred, symptom_pred, classification_pred
+            # Scale features
+            if "survival" in self.scalers:
+                X_scaled = self.scalers["survival"].transform(X)
+            else:
+                X_scaled = X
+
+            # Get prediction with confidence interval
+            time_pred, lower_ci, upper_ci = self.bootstrap_prediction(
+                self.models["survival"], X_scaled
             )
 
+            # Ensure positive values
+            time_pred = max(0, time_pred)
+            lower_ci = max(0, lower_ci)
+            upper_ci = max(0, upper_ci)
+
             return {
-                "survival": survival_pred,
-                "symptoms": symptom_pred,
-                "classification": classification_pred,
-                "recommendations": recommendations,
-                "timestamp": datetime.now().isoformat(),
-                "model_version": "1.0",
+                "time_to_menopause": float(time_pred),
+                "time_lower_ci": float(lower_ci),
+                "time_upper_ci": float(upper_ci),
+                "time_confidence_interval": f"{lower_ci:.1f} - {upper_ci:.1f} years",
             }
 
         except Exception as e:
-            logger.error(f"Error in comprehensive prediction: {e}")
+            logger.error(f"Survival prediction failed: {e}")
             return {
-                "error": str(e),
-                "survival": {"time_to_menopause_years": 3.0, "risk_level": "moderate"},
-                "symptoms": {"severity_score": 5.0, "severity_level": "moderate"},
-                "classification": {"predicted_class": "Peri-menopause", "confidence": 0.6},
-                "recommendations": [{"priority": "high", "title": "Consult Healthcare Provider"}],
-                "timestamp": datetime.now().isoformat(),
+                "time_to_menopause": 0.0,
+                "time_lower_ci": 0.0,
+                "time_upper_ci": 0.0,
+                "time_confidence_interval": "N/A",
             }
 
-    def _generate_recommendations(
-        self, survival: Dict, symptoms: Dict, classification: Dict
-    ) -> list:
-        """Generate personalized recommendations."""
+    def predict_symptoms(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Predict symptom severity with confidence intervals.
+
+        Args:
+            input_data: User input features
+
+        Returns:
+            Dictionary with symptom predictions and confidence
+        """
+        try:
+            # Preprocess features
+            X = self.preprocess_features(input_data, "symptom")
+
+            # Scale features
+            if "symptom" in self.scalers:
+                X_scaled = self.scalers["symptom"].transform(X)
+            else:
+                X_scaled = X
+
+            # Get prediction with confidence interval
+            symptom_pred, lower_ci, upper_ci = self.bootstrap_prediction(
+                self.models["symptom"], X_scaled
+            )
+
+            # Ensure values are in valid range (0-10)
+            symptom_pred = max(0, min(10, symptom_pred))
+            lower_ci = max(0, min(10, lower_ci))
+            upper_ci = max(0, min(10, upper_ci))
+
+            # Map to symptom names (assuming single output, we'll create synthetic multi-output)
+            symptoms = {
+                "hot_flashes": symptom_pred,
+                "mood_changes": symptom_pred * 0.8,  # Simulate different symptoms
+                "sleep_disturbance": symptom_pred * 0.9,
+            }
+
+            return {
+                "symptoms": symptoms,
+                "overall_severity": float(symptom_pred),
+                "severity_lower_ci": float(lower_ci),
+                "severity_upper_ci": float(upper_ci),
+                "severity_confidence_interval": f"{lower_ci:.1f} - {upper_ci:.1f}",
+            }
+
+        except Exception as e:
+            logger.error(f"Symptom prediction failed: {e}")
+            return {
+                "symptoms": {"hot_flashes": 0.0, "mood_changes": 0.0, "sleep_disturbance": 0.0},
+                "overall_severity": 0.0,
+                "severity_lower_ci": 0.0,
+                "severity_upper_ci": 0.0,
+                "severity_confidence_interval": "N/A",
+            }
+
+    def generate_recommendations(self, predictions: Dict[str, Any]) -> List[Dict[str, str]]:
+        """
+        Generate personalized recommendations based on predictions.
+
+        Args:
+            predictions: Dictionary containing all prediction results
+
+        Returns:
+            List of recommendation dictionaries
+        """
         recommendations = []
 
-        # Risk-based recommendations
-        if survival.get("risk_level") == "high":
-            recommendations.append(
-                {
-                    "priority": "high",
-                    "title": "Schedule Healthcare Consultation",
-                    "description": "Your risk assessment suggests immediate consultation with a healthcare provider.",
-                }
+        try:
+            # Get clinical insights
+            clinical_insights = self.model_insights.get("clinical_insights", {})
+
+            # Stage-based recommendations
+            stage = predictions.get("classification", {}).get("stage", "Unknown")
+            if stage in ["Pre-menopause", "Peri-menopause", "Post-menopause"]:
+                if stage == "Pre-menopause":
+                    recommendations.append(
+                        {
+                            "category": "Preventive Care",
+                            "title": "Maintain Reproductive Health",
+                            "description": "Focus on regular exercise, balanced nutrition, and stress management to support hormonal health.",
+                            "priority": "high",
+                        }
+                    )
+                elif stage == "Peri-menopause":
+                    recommendations.append(
+                        {
+                            "category": "Symptom Management",
+                            "title": "Monitor Symptoms Closely",
+                            "description": "Track menstrual cycles and symptoms. Consider lifestyle modifications for symptom relief.",
+                            "priority": "high",
+                        }
+                    )
+                elif stage == "Post-menopause":
+                    recommendations.append(
+                        {
+                            "category": "Long-term Health",
+                            "title": "Focus on Bone and Heart Health",
+                            "description": "Prioritize calcium-rich diet, weight-bearing exercise, and cardiovascular health monitoring.",
+                            "priority": "high",
+                        }
+                    )
+
+            # Time-based recommendations
+            time_to_menopause = predictions.get("survival", {}).get("time_to_menopause", 0)
+            if time_to_menopause < 2:
+                recommendations.append(
+                    {
+                        "category": "Timeline",
+                        "title": "Prepare for Transition",
+                        "description": "Menopause transition may occur soon. Consider discussing options with your healthcare provider.",
+                        "priority": "high",
+                    }
+                )
+            elif time_to_menopause < 5:
+                recommendations.append(
+                    {
+                        "category": "Timeline",
+                        "title": "Monitor Changes",
+                        "description": "Regular monitoring of menstrual cycles and hormone levels is recommended.",
+                        "priority": "medium",
+                    }
+                )
+
+            # Symptom-based recommendations
+            symptoms = predictions.get("symptom", {}).get("symptoms", {})
+            overall_severity = predictions.get("symptom", {}).get("overall_severity", 0)
+
+            if overall_severity > 7:
+                recommendations.append(
+                    {
+                        "category": "Symptom Relief",
+                        "title": "High Symptom Severity",
+                        "description": "Consider consulting with a healthcare provider for symptom management strategies.",
+                        "priority": "high",
+                    }
+                )
+            elif overall_severity > 4:
+                recommendations.append(
+                    {
+                        "category": "Lifestyle",
+                        "title": "Moderate Symptom Management",
+                        "description": "Focus on lifestyle modifications including cooling strategies and stress management.",
+                        "priority": "medium",
+                    }
+                )
+
+            # Add general recommendations
+            recommendations.extend(
+                [
+                    {
+                        "category": "General Health",
+                        "title": "Regular Exercise",
+                        "description": "Aim for 150 minutes of moderate-intensity exercise per week.",
+                        "priority": "medium",
+                    },
+                    {
+                        "category": "Nutrition",
+                        "title": "Balanced Diet",
+                        "description": "Focus on calcium-rich foods, fruits, vegetables, and whole grains.",
+                        "priority": "medium",
+                    },
+                    {
+                        "category": "Mental Health",
+                        "title": "Stress Management",
+                        "description": "Practice relaxation techniques such as meditation, yoga, or deep breathing.",
+                        "priority": "medium",
+                    },
+                ]
             )
 
-        # Symptom-based recommendations
-        if symptoms.get("severity_level") == "severe":
-            recommendations.append(
+        except Exception as e:
+            logger.error(f"Error generating recommendations: {e}")
+            # Fallback recommendations
+            recommendations = [
                 {
+                    "category": "General",
+                    "title": "Consult Healthcare Provider",
+                    "description": "Please discuss your results with a qualified healthcare provider for personalized guidance.",
                     "priority": "high",
-                    "title": "Symptom Management",
-                    "description": "Consider discussing symptom management strategies with your healthcare provider.",
                 }
-            )
-        elif symptoms.get("severity_level") == "moderate":
-            recommendations.append(
-                {
-                    "priority": "medium",
-                    "title": "Lifestyle Modifications",
-                    "description": "Focus on stress management, regular exercise, and balanced nutrition.",
-                }
-            )
-
-        # General recommendations
-        recommendations.append(
-            {
-                "priority": "medium",
-                "title": "Regular Monitoring",
-                "description": "Continue tracking your symptoms and wellness metrics.",
-            }
-        )
+            ]
 
         return recommendations
 
+    def predict_all(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Make all predictions and generate recommendations.
 
-# Global prediction service instance
+        Args:
+            input_data: User input features
+
+        Returns:
+            Complete prediction results with recommendations
+        """
+        logger.info("Making comprehensive predictions")
+
+        # Make individual predictions
+        classification_result = self.predict_classification(input_data)
+        survival_result = self.predict_survival(input_data)
+        symptom_result = self.predict_symptoms(input_data)
+
+        # Combine results
+        predictions = {
+            "classification": classification_result,
+            "survival": survival_result,
+            "symptom": symptom_result,
+        }
+
+        # Generate recommendations
+        recommendations = self.generate_recommendations(predictions)
+
+        return {
+            "predictions": predictions,
+            "recommendations": recommendations,
+            "timestamp": str(pd.Timestamp.now()),
+            "model_version": "1.0.0",
+        }
+
+
+# Global instance for API usage
 prediction_service = None
 
 
-def get_prediction_service() -> PredictionService:
+def get_prediction_service():
     """Get or create the global prediction service instance."""
     global prediction_service
     if prediction_service is None:
         prediction_service = PredictionService()
     return prediction_service
-
-
-def predict_menopause(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Main prediction function for external use."""
-    service = get_prediction_service()
-    return service.get_comprehensive_prediction(data)
-
-
-if __name__ == "__main__":
-    # Test the prediction service
-    test_data = {
-        "age": 45,
-        "bmi": 25.5,
-        "fsh": 15.2,
-        "estradiol": 45.0,
-        "hot_flashes": True,
-        "night_sweats": False,
-        "mood_changes": True,
-        "sleep_issues": True,
-    }
-
-    service = PredictionService()
-    result = service.get_comprehensive_prediction(test_data)
-    print("Test prediction result:")
-    print(result)

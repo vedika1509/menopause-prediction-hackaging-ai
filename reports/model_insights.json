@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2025-10-23T05:26:32.032825",
+    "generated_at": "2025-10-23T06:20:29.412206",
     "version": "1.0.0",
     "description": "Comprehensive model insights for MenoBalance AI",
     "total_models": 3,
@@ -36,7 +36,7 @@
         },
         "Random Forest": {
           "r2_score": 0.9595366214179941,
-          "mae": 3.4995365610466376,
+          "mae": 3.499536561046637,
           "cv_mean": 0.9577447335973497
         },
         "Ridge Regression": {
@@ -49,31 +49,36 @@
     },
     "symptom": {
       "performance": {
-        "best_model": "XGBoost",
-        "r2_score": 0.8597226641182658,
-        "mae": 0.24203810840793896,
-        "cv_mean": 0.858427156896943,
-        "cv_std": 0.008662392313699857,
-        "total_models": 3,
+        "best_model": "CatBoost",
+        "r2_score": 0.8541480896205689,
+        "mae": 0.24528120272614534,
+        "cv_mean": 0.8540966782103716,
+        "cv_std": 0.0,
+        "total_models": 4,
         "prediction_type": "Symptom severity (0-10 scale)",
         "accuracy_range": "\u00b10.5 points (95% CI)",
         "clinical_relevance": "High - guides treatment and lifestyle interventions"
       },
       "all_models": {
-        "Ridge Regression": {
-          "r2_score": 0.5413830034848817,
-          "mae": 0.3827297304204784,
-          "cv_mean": 0.5483828289034383
-        },
-        "Random Forest": {
-          "r2_score": 0.8484006555595172,
-          "mae": 0.24689677404578025,
-          "cv_mean": 0.8413256671954606
+        "CatBoost": {
+          "r2_score": 0.8541480896205689,
+          "mae": 0.24528120272614534,
+          "cv_mean": 0.8540966782103716
         },
         "XGBoost": {
-          "r2_score": 0.8597226641182658,
-          "mae": 0.24203810840793896,
-          "cv_mean": 0.858427156896943
+          "r2_score": 0.8446632406493328,
+          "mae": 0.25184928826316133,
+          "cv_mean": 0.8423104431915215
+        },
+        "Random Forest": {
+          "r2_score": 0.7980027264915873,
+          "mae": 0.278076873707006,
+          "cv_mean": 0.7859050628718098
+        },
+        "Ridge Regression": {
+          "r2_score": 0.5405160050875457,
+          "mae": 0.38291609278613425,
+          "cv_mean": 0.5490046313558347
         }
       },
       "shap_available": "Available"
@@ -82,7 +87,7 @@
   "performance_summary": {
     "overall_quality": "Excellent",
     "survival_accuracy": "0.995",
-    "symptom_accuracy": "0.858",
+    "symptom_accuracy": "0.854",
     "recommended_use": "Educational and informational purposes only",
     "clinical_validation": "Required before clinical deployment"
   },

@@ -1,420 +1,375 @@
-# MenoBalance AI Deployment Guide
+# Deployment Guide for MenoBalance AI
 
-## Overview
-
-This guide provides step-by-step instructions for deploying MenoBalance AI in various environments, from local development to production deployment.
+This guide provides comprehensive instructions for deploying MenoBalance AI to various platforms.
 
 ## Prerequisites
 
-### System Requirements
-- **Python 3.9+** - Required for the application
-- **Docker** - For containerized deployment
-- **Git** - For version control
-- **Memory** - Minimum 4GB RAM, 8GB recommended
-- **Storage** - Minimum 10GB free space
-- **Network** - Internet connection for API calls
+- Python 3.9+
+- Git
+- Docker (optional, for containerized deployment)
+- Nebius AI API key (for chatbot functionality)
 
-### Required Accounts
-- **Nebius.ai** - API key for chatbot functionality
-- **GitHub** - For code repository access
-- **Render/Streamlit Cloud** - For cloud deployment (optional)
+## Environment Setup
 
-## Local Development Setup
+### 1. Clone the Repository
 
-### 1. Clone Repository
 ```bash
-git clone https://github.com/vedika1509/menopause-prediction.git
-cd menopause-prediction
+git clone https://github.com/vedika1509/menopause-prediction-hackaging-ai.git
+cd menopause-prediction-hackaging-ai/menobalance
 ```
 
-### 2. Environment Setup
+### 2. Install Dependencies
+
 ```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# Windows
-venv\Scripts\activate
-# macOS/Linux
-source venv/bin/activate
-
-# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Environment Variables
+### 3. Environment Configuration
+
+Copy the environment template and configure:
+
 ```bash
-# Copy environment template
 cp env.example .env
-
-# Edit .env file with your values
-NEBIUS_API_KEY=your_nebius_api_key_here
-FLASK_SECRET_KEY=your_secret_key_here
-LOG_LEVEL=INFO
 ```
 
-### 4. Run Application
+Edit `.env` file with your configuration:
+
 ```bash
-# Start API server
-python src/predict_api.py
+# Required: Nebius AI API Key
+NEBIUS_AI_API_KEY=your_actual_api_key_here
 
-# Start Streamlit app (in another terminal)
-streamlit run src/app_streamlit_main.py
+# Optional: Customize other settings
+API_HOST=0.0.0.0
+API_PORT=8000
+STREAMLIT_SERVER_PORT=8501
 ```
 
-## Docker Deployment
+## Deployment Options
 
-### 1. Build Docker Image
+### Option 1: Streamlit Cloud (Recommended)
+
+Streamlit Cloud provides free hosting for Streamlit applications.
+
+#### Steps:
+
+1. **Push to GitHub**
+   ```bash
+   git add .
+   git commit -m "Deploy to Streamlit Cloud"
+   git push origin main
+   ```
+
+2. **Deploy on Streamlit Cloud**
+   - Go to [share.streamlit.io](https://share.streamlit.io)
+   - Sign in with your GitHub account
+   - Click "New app"
+   - Select your repository: `vedika1509/menopause-prediction-hackaging-ai`
+   - Set main file path: `menobalance/src/app_streamlit_main.py`
+   - Click "Deploy!"
+
+3. **Configure Secrets**
+   - In your Streamlit Cloud app settings
+   - Go to "Secrets" tab
+   - Add your environment variables:
+     ```toml
+     [secrets]
+     NEBIUS_AI_API_KEY = "your_api_key_here"
+     ```
+
+4. **Redeploy**
+   - Save secrets and redeploy your app
+
+#### Streamlit Cloud Configuration
+
+Create `.streamlit/secrets.toml` in your repository:
+
+```toml
+[secrets]
+NEBIUS_AI_API_KEY = "your_api_key_here"
+```
+
+### Option 2: Docker Deployment
+
+#### Build Docker Image
+
 ```bash
 # Build the image
 docker build -t menobalance-ai .
 
-# Tag for registry
-docker tag menobalance-ai your-registry/menobalance-ai:latest
+# Run the container
+docker run -p 8501:8501 \
+  -e NEBIUS_AI_API_KEY=your_api_key_here \
+  menobalance-ai
 ```
 
-### 2. Run with Docker Compose
-```bash
-# Start all services
-docker-compose up -d
+#### Docker Compose (Recommended)
 
-# Check status
-docker-compose ps
+Create `docker-compose.yml`:
 
-# View logs
-docker-compose logs -f
+```yaml
+version: '3.8'
+
+services:
+  menobalance:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - NEBIUS_AI_API_KEY=${NEBIUS_AI_API_KEY}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
 ```
 
-### 3. Environment Configuration
+Run with Docker Compose:
+
 ```bash
-# Set environment variables
-export NEBIUS_API_KEY=your_api_key
-export FLASK_SECRET_KEY=your_secret_key
-
-# Or use .env file
-echo "NEBIUS_API_KEY=your_api_key" > .env
-echo "FLASK_SECRET_KEY=your_secret_key" >> .env
-```
-
-## Cloud Deployment
-
-### Streamlit Cloud Deployment (Recommended)
-
-#### 1. Prepare Repository
-```bash
-# Ensure requirements.txt is in root
-# Ensure main app file is src/app_streamlit_main.py
-# Add secrets to Streamlit Cloud
-```
-
-#### 2. Deploy to Streamlit Cloud
-1. **Connect Repository** - Link GitHub repository
-2. **Configure App**:
-   - **Main file**: `src/app_streamlit_main.py`
-   - **Python version**: 3.9
-3. **Add Secrets**:
-   - `NEBIUS_API_KEY` - Your Nebius.ai API key
-   - `FLASK_SECRET_KEY` - Random secret key
-4. **Deploy** - Click deploy button
-
-
-### AWS Deployment
-
-#### 1. EC2 Instance Setup
-```bash
-# Launch EC2 instance (t3.medium or larger)
-# Install Docker
-sudo yum update -y
-sudo yum install -y docker
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Install Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
-#### 2. Deploy Application
-```bash
-# Clone repository
-git clone https://github.com/vedika1509/menopause-prediction.git
-cd menopause-prediction
-
-# Set environment variables
-export NEBIUS_API_KEY=your_api_key
-export FLASK_SECRET_KEY=your_secret_key
-
-# Start services
 docker-compose up -d
 ```
 
-#### 3. Configure Security Groups
-- **Port 80** - HTTP traffic
-- **Port 443** - HTTPS traffic
-- **Port 8501** - Streamlit (if direct access needed)
-- **Port 5000** - API (if direct access needed)
+### Option 3: Local Development
 
-### Google Cloud Platform
+#### Run Streamlit App
 
-#### 1. Cloud Run Deployment
 ```bash
-# Build and push to Google Container Registry
-gcloud builds submit --tag gcr.io/PROJECT-ID/menobalance-ai
-
-# Deploy to Cloud Run
-gcloud run deploy menobalance-ai \
-  --image gcr.io/PROJECT-ID/menobalance-ai \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
+streamlit run src/app_streamlit_main.py
 ```
 
-#### 2. Environment Variables
+#### Run API Server (Optional)
+
+In a separate terminal:
+
 ```bash
-# Set environment variables in Cloud Run
-gcloud run services update menobalance-ai \
-  --set-env-vars NEBIUS_API_KEY=your_api_key,FLASK_SECRET_KEY=your_secret_key
+cd src
+python api_endpoint.py
 ```
 
-## Production Configuration
+Access the application:
+- Streamlit UI: http://localhost:8501
+- API Documentation: http://localhost:8000/docs
 
-### 1. Environment Variables
-```bash
-# Production environment variables
-ENVIRONMENT=production
-LOG_LEVEL=INFO
-FLASK_ENV=production
-NEBIUS_API_KEY=your_production_api_key
-FLASK_SECRET_KEY=your_production_secret_key
+### Option 4: Cloud Platforms
+
+#### Heroku
+
+1. Create `Procfile`:
+   ```
+   web: streamlit run src/app_streamlit_main.py --server.port=$PORT --server.address=0.0.0.0
+   ```
+
+2. Deploy:
+   ```bash
+   git add .
+   git commit -m "Deploy to Heroku"
+   git push heroku main
+   ```
+
+#### AWS EC2
+
+1. Launch EC2 instance (Ubuntu 20.04+)
+2. Install dependencies:
+   ```bash
+   sudo apt update
+   sudo apt install python3-pip nginx
+   pip3 install -r requirements.txt
+   ```
+3. Configure Nginx reverse proxy
+4. Run with systemd service
+
+#### Google Cloud Platform
+
+1. Use Cloud Run for containerized deployment
+2. Or use App Engine with custom runtime
+
+## Configuration
+
+### Streamlit Configuration
+
+The app uses `.streamlit/config.toml` for configuration:
+
+```toml
+[theme]
+primaryColor = "#9B59B6"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8F4FF"
+textColor = "#262730"
+font = "Inter"
+
+[server]
+headless = true
+port = 8501
+address = "0.0.0.0"
 ```
 
-### 2. Security Configuration
-```bash
-# Enable HTTPS
-# Configure SSL certificates
-# Set up firewall rules
-# Enable access logging
-# Configure rate limiting
+### API Configuration
+
+The FastAPI backend can be configured via environment variables:
+
+- `API_HOST`: Host address (default: 0.0.0.0)
+- `API_PORT`: Port number (default: 8000)
+- `LOG_LEVEL`: Logging level (default: INFO)
+
+## Monitoring and Logging
+
+### Log Files
+
+Logs are stored in the `logs/` directory:
+
+- `api.log`: API server logs
+- `app.log`: Application logs
+
+### Health Checks
+
+The application provides health check endpoints:
+
+- Streamlit: `/_stcore/health`
+- API: `/health`
+
+### Monitoring
+
+For production deployments, consider:
+
+- Application monitoring (e.g., New Relic, DataDog)
+- Error tracking (e.g., Sentry)
+- Performance monitoring
+- Uptime monitoring
+
+## Security Considerations
+
+### Environment Variables
+
+- Never commit API keys or secrets to version control
+- Use environment variables for sensitive configuration
+- Rotate API keys regularly
+
+### CORS Configuration
+
+Configure CORS appropriately for your deployment:
+
+```python
+# In api_endpoint.py
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://yourdomain.com"],  # Specify allowed origins
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 ```
 
-### 3. Monitoring and Logging
-```bash
-# Set up monitoring
-# Configure log aggregation
-# Set up alerts
-# Monitor performance metrics
-# Track error rates
-```
+### HTTPS
 
-## Health Checks and Monitoring
+For production deployments:
 
-### 1. Health Check Endpoints
-```bash
-# API health check
-curl http://localhost:5000/health
-
-# Streamlit health check
-curl http://localhost:8501/_stcore/health
-```
-
-### 2. Monitoring Setup
-```bash
-# Set up monitoring dashboard
-# Configure alerts for:
-# - High error rates
-# - Slow response times
-# - Service downtime
-# - Resource usage
-```
-
-### 3. Log Management
-```bash
-# Configure log rotation
-# Set up log aggregation
-# Monitor log levels
-# Track user activity
-```
+- Use HTTPS certificates (Let's Encrypt for free certificates)
+- Configure secure headers
+- Use secure session management
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### 1. API Connection Issues
+1. **Import Errors**
+   - Ensure all dependencies are installed
+   - Check Python path configuration
+
+2. **API Connection Issues**
+   - Verify Nebius AI API key is correct
+   - Check network connectivity
+   - Review API endpoint configuration
+
+3. **Model Loading Errors**
+   - Ensure model files exist in `models/` directory
+   - Check file permissions
+   - Verify model file integrity
+
+4. **Port Conflicts**
+   - Change port numbers in configuration
+   - Check for running processes on ports 8501/8000
+
+### Debug Mode
+
+Enable debug mode for development:
+
 ```bash
-# Check if API is running
-curl http://localhost:5000/health
-
-# Check logs
-docker-compose logs api
-
-# Restart API service
-docker-compose restart api
+export STREAMLIT_LOGGER_LEVEL=debug
+streamlit run src/app_streamlit_main.py
 ```
 
-#### 2. Streamlit Issues
+### Log Analysis
+
+View logs for debugging:
+
 ```bash
-# Check if Streamlit is running
-curl http://localhost:8501/_stcore/health
+# Streamlit logs
+tail -f ~/.streamlit/logs/streamlit.log
 
-# Check logs
-docker-compose logs streamlit
-
-# Restart Streamlit service
-docker-compose restart streamlit
+# Application logs
+tail -f logs/app.log
 ```
 
-#### 3. Model Loading Issues
-```bash
-# Check if models exist
-ls -la models/
+## Performance Optimization
 
-# Check model files
-ls -la models/task_specific_*/
+### Caching
 
-# Verify model loading
-python -c "import pickle; pickle.load(open('models/task_specific_survival/best_model.pkl', 'rb'))"
-```
+The application uses Streamlit caching for:
 
-#### 4. Database Issues
-```bash
-# Check Redis connection
-redis-cli ping
+- Model loading (`@st.cache_resource`)
+- Data processing (`@st.cache_data`)
+- API responses
 
-# Check Redis logs
-docker-compose logs redis
+### Resource Management
 
-# Restart Redis
-docker-compose restart redis
-```
+- Monitor memory usage
+- Optimize model loading
+- Use lazy loading for heavy computations
 
-### Performance Optimization
+### Scaling
 
-#### 1. API Performance
-```bash
-# Increase worker processes
-gunicorn -w 4 -b 0.0.0.0:5000 src.predict_api:app
+For high-traffic deployments:
 
-# Enable caching
-# Configure Redis caching
-# Optimize model loading
-```
-
-#### 2. Streamlit Performance
-```bash
-# Optimize Streamlit configuration
-# Enable caching
-# Reduce memory usage
-# Optimize data processing
-```
+- Use load balancers
+- Implement horizontal scaling
+- Consider microservices architecture
+- Use CDN for static assets
 
 ## Backup and Recovery
 
-### 1. Data Backup
-```bash
-# Backup models
-tar -czf models_backup.tar.gz models/
+### Data Backup
 
-# Backup logs
-tar -czf logs_backup.tar.gz logs/
+- Backup model files
+- Backup configuration files
+- Backup logs (for debugging)
 
-# Backup configuration
-cp .env env_backup
-```
+### Recovery Procedures
 
-### 2. Recovery Procedures
-```bash
-# Restore models
-tar -xzf models_backup.tar.gz
+1. Restore from backup
+2. Verify configuration
+3. Test functionality
+4. Monitor for issues
 
-# Restore logs
-tar -xzf logs_backup.tar.gz
+## Support and Maintenance
 
-# Restore configuration
-cp env_backup .env
-```
+### Regular Maintenance
 
-## Scaling and Load Balancing
+- Update dependencies regularly
+- Monitor security advisories
+- Review and rotate API keys
+- Clean up log files
 
-### 1. Horizontal Scaling
-```bash
-# Scale API service
-docker-compose up -d --scale api=3
+### Support Channels
 
-# Scale Streamlit service
-docker-compose up -d --scale streamlit=2
-```
+- GitHub Issues: For bug reports and feature requests
+- Documentation: This deployment guide
+- Community: GitHub Discussions
 
-### 2. Load Balancing
-```bash
-# Configure Nginx load balancer
-# Set up health checks
-# Configure sticky sessions
-# Monitor load distribution
-```
+## Conclusion
 
-## Security Considerations
+This deployment guide covers the main deployment options for MenoBalance AI. Choose the option that best fits your needs:
 
-### 1. API Security
-```bash
-# Enable HTTPS
-# Configure CORS
-# Set up rate limiting
-# Implement authentication
-# Monitor for attacks
-```
+- **Streamlit Cloud**: Best for demos and small applications
+- **Docker**: Best for consistent deployment across environments
+- **Local**: Best for development and testing
+- **Cloud Platforms**: Best for production applications
 
-### 2. Data Security
-```bash
-# Encrypt sensitive data
-# Secure API keys
-# Monitor access logs
-# Implement data retention
-# Regular security audits
-```
-
-## Maintenance and Updates
-
-### 1. Regular Maintenance
-```bash
-# Update dependencies
-pip install -r requirements.txt --upgrade
-
-# Update Docker images
-docker-compose pull
-docker-compose up -d
-
-# Clean up old logs
-# Monitor disk usage
-# Update security patches
-```
-
-### 2. Model Updates
-```bash
-# Backup current models
-# Deploy new models
-# Test new models
-# Monitor performance
-# Rollback if needed
-```
-
-## Support and Documentation
-
-### 1. Getting Help
-- **GitHub Issues** - Report bugs and issues
-- **Documentation** - Check this guide and README
-- **Community** - Join our community forum
-- **Email Support** - Contact support@menobalance.ai
-
-### 2. Contributing
-- **Fork Repository** - Create your own fork
-- **Create Branch** - Create feature branch
-- **Submit PR** - Submit pull request
-- **Code Review** - Participate in code review
-
----
-
-*This deployment guide is regularly updated. Check for the latest version and updates.*
-
-**Last Updated**: [Current Date]
-**Version**: 1.0
-**Next Review**: [3 months from current date]
+For additional support or questions, please refer to the project documentation or create an issue on GitHub.

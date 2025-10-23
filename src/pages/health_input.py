@@ -1,566 +1,387 @@
 """
-Enhanced Health Input Page for MenoBalance AI
-Allows users to input health data and get predictions with comprehensive validation and visualizations
+Health Input Page for MenoBalance AI
+Comprehensive health data collection form with validation and progress tracking.
 """
 
-import os
-import sys
-
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 
-# Add project root to path
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
 
-
-def validate_health_data(data):
-    """Validate health input data with comprehensive checks."""
-    errors = []
-    warnings = []
-
-    # Age validation
-    if data["age"] < 18:
-        errors.append("Age must be at least 18 years")
-    elif data["age"] > 65:
-        warnings.append("Age is above typical menopause range (45-55)")
-
-    # BMI validation
-    if data["bmi"] < 15 or data["bmi"] > 50:
-        errors.append("BMI should be between 15 and 50")
-    elif data["bmi"] < 18.5:
-        warnings.append("BMI suggests underweight - consult healthcare provider")
-    elif data["bmi"] > 30:
-        warnings.append("BMI suggests overweight - may affect hormone levels")
-
-    # Hormone level validations
-    if data["fsh"] < 1 or data["fsh"] > 100:
-        errors.append("FSH level should be between 1-100 mIU/mL")
-    elif data["fsh"] > 25:
-        warnings.append("High FSH levels may indicate perimenopause")
-
-    if data["amh"] < 0.1 or data["amh"] > 10:
-        errors.append("AMH level should be between 0.1-10 ng/mL")
-    elif data["amh"] < 1.0:
-        warnings.append("Low AMH levels may indicate reduced ovarian reserve")
-
-    if data["estradiol"] < 10 or data["estradiol"] > 500:
-        errors.append("Estradiol level should be between 10-500 pg/mL")
-
-    # Last period validation
-    if data["last_period_months"] > 12:
-        warnings.append("No period for over 12 months - may indicate menopause")
-
-    # Symptom severity validation
-    symptom_scores = [
-        data["hot_flashes"],
-        data["mood_changes"],
-        data["sleep_quality"],
-        data["stress_level"],
-    ]
-    if any(score < 0 or score > 10 for score in symptom_scores):
-        errors.append("Symptom scores must be between 0-10")
-
-    return errors, warnings
-
-
-def create_risk_gauge(value, title, color_scheme="RdYlGn"):
-    """Create a gauge chart for risk assessment."""
-    fig = go.Figure(
-        go.Indicator(
-            mode="gauge+number+delta",
-            value=value,
-            domain={"x": [0, 1], "y": [0, 1]},
-            title={"text": title},
-            delta={"reference": 5},
-            gauge={
-                "axis": {"range": [None, 10]},
-                "bar": {"color": "darkblue"},
-                "steps": [
-                    {"range": [0, 3], "color": "lightgray"},
-                    {"range": [3, 7], "color": "yellow"},
-                    {"range": [7, 10], "color": "red"},
-                ],
-                "threshold": {"line": {"color": "red", "width": 4}, "thickness": 0.75, "value": 8},
-            },
-        )
-    )
-
-    fig.update_layout(
-        height=300,
-        font={"color": "darkblue", "family": "Arial"},
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-    )
-
-    return fig
-
-
-def create_symptom_bar_chart(symptoms):
-    """Create a bar chart for symptom severity."""
-    symptom_names = ["Hot Flashes", "Mood Changes", "Sleep Quality", "Stress Level"]
-    symptom_values = [
-        symptoms.get("hot_flashes", 0),
-        symptoms.get("mood_changes", 0),
-        symptoms.get("sleep_quality", 0),
-        symptoms.get("stress_level", 0),
-    ]
-
-    # For sleep quality, invert the scale (10 = excellent, 0 = poor)
-    symptom_values[2] = 10 - symptom_values[2]
-
-    fig = px.bar(
-        x=symptom_names,
-        y=symptom_values,
-        title="Current Symptom Severity",
-        color=symptom_values,
-        color_continuous_scale="RdYlGn_r",
-        labels={"x": "Symptoms", "y": "Severity (0-10)"},
-    )
-
-    fig.update_layout(
-        height=400, showlegend=False, xaxis_title="Symptoms", yaxis_title="Severity Score"
-    )
-
-    return fig
-
-
-def create_confidence_interval_chart(predictions):
-    """Create confidence interval visualization."""
-    if not predictions:
-        return None
-
-    survival = predictions.get("survival", {})
-    symptoms = predictions.get("symptoms", {})
-
-    # Prepare data for confidence intervals
-    data = []
-
-    if "confidence_interval" in survival:
-        ci = survival["confidence_interval"]
-        data.append(
-            {
-                "Metric": "Time to Menopause (years)",
-                "Value": survival.get("time_to_menopause_years", 0),
-                "Lower": ci[0],
-                "Upper": ci[1],
-                "Confidence": survival.get("confidence_level", 0.95),
-            }
-        )
-
-    if "confidence_interval" in symptoms:
-        ci = symptoms["confidence_interval"]
-        data.append(
-            {
-                "Metric": "Symptom Severity",
-                "Value": symptoms.get("severity_score", 0),
-                "Lower": ci[0],
-                "Upper": ci[1],
-                "Confidence": symptoms.get("confidence_level", 0.95),
-            }
-        )
-
-    if not data:
-        return None
-
-    df = pd.DataFrame(data)
-
-    fig = go.Figure()
-
-    for _, row in df.iterrows():
-        fig.add_trace(
-            go.Scatter(
-                x=[row["Metric"]],
-                y=[row["Value"]],
-                error_y=dict(
-                    type="data",
-                    symmetric=False,
-                    array=[row["Upper"] - row["Value"]],
-                    arrayminus=[row["Value"] - row["Lower"]],
-                    visible=True,
-                ),
-                mode="markers",
-                name=row["Metric"],
-                marker=dict(size=10, color="blue"),
-            )
-        )
-
-    fig.update_layout(
-        title="Prediction Confidence Intervals",
-        xaxis_title="Metrics",
-        yaxis_title="Values",
-        height=400,
-    )
-
-    return fig
-
-
-def render_health_input():
-    """Render the enhanced health input page."""
-    st.markdown('<div class="fade-in">', unsafe_allow_html=True)
-
-    # Empathetic header with supportive messaging
-    st.markdown(
-        """
-        <div style="text-align: center; margin-bottom: 2rem; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
-            <h1 style="color: white; margin-bottom: 1rem;">💜 Your Health Journey</h1>
-            <p style="font-size: 1.2rem; margin: 0; opacity: 0.9;">We understand that sharing your health information is personal and important. Your data helps us provide better, more personalized insights for your menopause journey.</p>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    # Supportive message
-    st.markdown(
-        """
-        <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; border-left: 4px solid #6B46C1;">
-            <h4 style="color: #6B46C1; margin-top: 0;">🤗 Your Privacy Matters</h4>
-            <p style="color: #6B46C1; margin: 0; line-height: 1.6;">All your health information is processed securely and privately. We use this data only to provide you with personalized insights and never share it with third parties. You're in control of your health journey.</p>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    # Health Input Form
-    with st.form("health_assessment", clear_on_submit=False):
-        st.markdown("### 📋 Basic Information")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            age = st.number_input(
-                "Age",
-                min_value=18,
-                max_value=100,
-                value=45,
-                help="Your current age - this helps us understand where you are in your menopause journey",
-            )
-
-            bmi = st.number_input(
-                "BMI (Body Mass Index)",
-                min_value=15.0,
-                max_value=50.0,
-                value=25.0,
-                step=0.1,
-                help="Your BMI (weight in kg / height in m²)",
-            )
-
-            last_period = st.number_input(
-                "Months since last period",
-                min_value=0,
-                max_value=120,
-                value=6,
-                help="Number of months since your last menstrual period",
-            )
-
-        with col2:
-            fsh = st.number_input(
-                "FSH Level (mIU/mL)",
-                min_value=1.0,
-                max_value=100.0,
-                value=15.0,
-                step=0.1,
-                help="Follicle Stimulating Hormone level",
-            )
-
-            amh = st.number_input(
-                "AMH Level (ng/mL)",
-                min_value=0.1,
-                max_value=10.0,
-                value=1.5,
-                step=0.1,
-                help="Anti-Müllerian Hormone level",
-            )
-
-            estradiol = st.number_input(
-                "Estradiol Level (pg/mL)",
-                min_value=10.0,
-                max_value=500.0,
-                value=50.0,
-                step=1.0,
-                help="Estradiol hormone level",
-            )
-
-        st.markdown("### 🩺 Current Symptoms")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            hot_flashes = st.slider(
-                "Hot Flashes Severity (0-10)",
-                min_value=0,
-                max_value=10,
-                value=3,
-                help="Rate the severity of hot flashes",
-            )
-
-            mood_changes = st.slider(
-                "Mood Changes (0-10)",
-                min_value=0,
-                max_value=10,
-                value=4,
-                help="Rate mood fluctuations and irritability",
-            )
-
-        with col2:
-            sleep_quality = st.slider(
-                "Sleep Quality (0-10)",
-                min_value=0,
-                max_value=10,
-                value=6,
-                help="Rate your sleep quality (0=poor, 10=excellent)",
-            )
-
-            stress_level = st.slider(
-                "Stress Level (0-10)",
-                min_value=0,
-                max_value=10,
-                value=5,
-                help="Rate your current stress level",
-            )
-
-        st.markdown("### 🏃‍♀️ Lifestyle Factors")
-
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            smoking = st.checkbox(
-                "Smoking History", help="Do you currently smoke or have a history of smoking?"
-            )
-            exercise = st.selectbox(
-                "Exercise Frequency",
-                ["None", "Light", "Moderate", "Intense"],
-                index=2,
-                help="How often do you exercise?",
-            )
-
-        with col2:
-            family_history = st.checkbox(
-                "Family History of Early Menopause",
-                help="Do you have family history of early menopause?",
-            )
-            diabetes = st.checkbox("Diabetes", help="Do you have diabetes?")
-
-        with col3:
-            hypertension = st.checkbox("Hypertension", help="Do you have high blood pressure?")
-            thyroid = st.checkbox("Thyroid Issues", help="Do you have thyroid problems?")
-
-        # Submit button
-        submitted = st.form_submit_button("🔮 Get My Predictions", width="stretch")
-
-        if submitted:
-            # Prepare health data
-            health_data = {
-                    "age": age,
-                    "bmi": bmi,
-                    "fsh": fsh,
-                "amh": amh,
-                    "estradiol": estradiol,
-                "last_period_months": last_period,
-                    "hot_flashes": hot_flashes,
-                    "mood_changes": mood_changes,
-                    "sleep_quality": sleep_quality,
-                    "stress_level": stress_level,
-                    "smoking": smoking,
-                "exercise": exercise,
-                "family_history": family_history,
-                "diabetes": diabetes,
-                "hypertension": hypertension,
-                "thyroid": thyroid,
-            }
-
-            # Validate data
-            errors, warnings = validate_health_data(health_data)
-
-            # Show validation results
-            if errors:
-                st.error("❌ Please fix the following errors:")
-                for error in errors:
-                    st.error(f"• {error}")
-                return
-
-            if warnings:
-                st.warning("⚠️ Please review the following warnings:")
-                for warning in warnings:
-                    st.warning(f"• {warning}")
-
-                # Store in session state
-            st.session_state.user_data = health_data
-
-                # Get predictions
-            with st.spinner("🔮 Analyzing your health data..."):
-                    try:
-                    from app_streamlit_main import get_predictions
-
-                    predictions = get_predictions(health_data)
-                            st.session_state.predictions = predictions
-
-                    # Show success message
-                    st.success("✅ Predictions generated successfully!")
-                            st.balloons()
-
-                    # Redirect to predictions page
-                    st.rerun()
-
-                    except Exception as e:
-                    st.error(f"❌ Error generating predictions: {str(e)}")
-                    st.error("Please try again or contact support if the issue persists.")
-
-    # Show current predictions if available
-    if "predictions" in st.session_state and st.session_state.predictions:
-        st.markdown("### 📊 Your Current Predictions")
-
-        predictions = st.session_state.predictions
-
-        # Display predictions in cards
-        col1, col2, col3 = st.columns(3)
-
-        with col1:
-            survival = predictions.get("survival", {})
-            st.markdown(
-                f"""
-                <div class="metric-card">
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">Time to Menopause</h3>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--foreground); margin: 1rem 0;">
-                        {survival.get("time_to_menopause_years", "N/A"):.1f} years
-                    </div>
-                    <p style="margin: 0; color: var(--text-muted);">
-                        {survival.get("risk_level", "Unknown").title()} Risk
-                    </p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.8rem;">
-                        Confidence: {survival.get("model_confidence", 0):.1%}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        with col2:
-            symptoms = predictions.get("symptoms", {})
-            st.markdown(
-                f"""
-                <div class="metric-card">
-                    <h3 style="color: var(--coral); margin-bottom: 0.5rem;">Symptom Severity</h3>
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--foreground); margin: 1rem 0;">
-                        {symptoms.get("severity_score", "N/A"):.1f}/10
-                    </div>
-                    <p style="margin: 0; color: var(--text-muted);">
-                        {symptoms.get("severity_level", "Unknown").title()} Level
-                    </p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.8rem;">
-                        Confidence: {symptoms.get("model_confidence", 0):.1%}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        with col3:
-            classification = predictions.get("classification", {})
-            st.markdown(
-                f"""
-                <div class="metric-card">
-                    <h3 style="color: var(--mint); margin-bottom: 0.5rem;">Menopause Stage</h3>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--foreground); margin: 1rem 0;">
-                        {classification.get("predicted_class", "Unknown")}
-                    </div>
-                    <p style="margin: 0; color: var(--text-muted);">
-                        Confidence: {classification.get("confidence", 0):.1%}
-                    </p>
-                    <p style="margin: 0; color: var(--text-muted); font-size: 0.8rem;">
-                        Method: {predictions.get("method", "Unknown")}
-                    </p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-        # Enhanced visualizations section
-        st.markdown("### 📈 Detailed Analysis")
-
-        # Create tabs for different visualizations
-        tab1, tab2, tab3, tab4 = st.tabs(
-            [
-                "🎯 Risk Assessment",
-                "📊 Symptom Analysis",
-                "📈 Confidence Intervals",
-                "💡 Recommendations",
-            ]
-        )
-
-        with tab1:
-            # Risk assessment gauges
-            col1, col2 = st.columns(2)
-
-            with col1:
-                # Time to menopause risk gauge
-                time_to_menopause = survival.get("time_to_menopause_years", 3.0)
-                risk_value = max(0, min(10, 10 - time_to_menopause))  # Convert to 0-10 scale
-                fig1 = create_risk_gauge(risk_value, "Menopause Risk Level")
-                st.plotly_chart(fig1, width="stretch")
-
-            with col2:
-                # Symptom severity gauge
-                severity_score = symptoms.get("severity_score", 5.0)
-                fig2 = create_risk_gauge(severity_score, "Symptom Severity")
-                st.plotly_chart(fig2, width="stretch")
-
-        with tab2:
-            # Symptom bar chart
-            if "user_data" in st.session_state:
-                user_symptoms = {
-                    "hot_flashes": st.session_state.user_data.get("hot_flashes", 0),
-                    "mood_changes": st.session_state.user_data.get("mood_changes", 0),
-                    "sleep_quality": st.session_state.user_data.get("sleep_quality", 0),
-                    "stress_level": st.session_state.user_data.get("stress_level", 0),
-                }
-                fig = create_symptom_bar_chart(user_symptoms)
-                st.plotly_chart(fig, width="stretch")
-            else:
-                st.info("No symptom data available for visualization")
-
-        with tab3:
-            # Confidence intervals chart
-            fig = create_confidence_interval_chart(predictions)
-            if fig:
-                st.plotly_chart(fig, width="stretch")
-            else:
-                st.info("No confidence interval data available")
-
-            # Also show text-based confidence intervals
-            col1, col2 = st.columns(2)
-            with col1:
-                if "confidence_interval" in survival:
-                    ci = survival["confidence_interval"]
-                    st.markdown(f"**Time to Menopause:** {ci[0]:.1f} - {ci[1]:.1f} years")
-            with col2:
-                if "confidence_interval" in symptoms:
-                    ci = symptoms["confidence_interval"]
-                    st.markdown(f"**Symptom Severity:** {ci[0]:.1f} - {ci[1]:.1f}")
-
-        with tab4:
-            # Show recommendations
-            if "recommendations" in predictions:
-                st.markdown("### 💡 Personalized Recommendations")
-                for i, rec in enumerate(predictions["recommendations"], 1):
-                    priority_emoji = (
-                        "🔴"
-                        if rec.get("priority") == "high"
-                        else "🟡"
-                        if rec.get("priority") == "medium"
-                        else "🟢"
-                    )
-                    st.markdown(
-                        f"{priority_emoji} **{rec.get('title', 'Recommendation')}**: {rec.get('description', '')}"
-                    )
+def validate_age(age):
+    """Validate age input."""
+    try:
+        age = float(age)
+        if 18 <= age <= 100:
+            return True, ""
         else:
-                st.info("No recommendations available")
+            return False, "Age must be between 18 and 100 years"
+    except:
+        return False, "Please enter a valid age"
 
-    st.markdown("</div>", unsafe_allow_html=True)
+
+def validate_bmi(bmi):
+    """Validate BMI input."""
+    try:
+        bmi = float(bmi)
+        if 10 <= bmi <= 80:
+            return True, ""
+        else:
+            return False, "BMI must be between 10 and 80"
+    except:
+        return False, "Please enter a valid BMI"
 
 
-if __name__ == "__main__":
-    render_health_input()
+def validate_hormone_value(value, hormone_name, min_val=0, max_val=1000):
+    """Validate hormone values."""
+    if value is None or value == "":
+        return True, ""  # Optional field
+
+    try:
+        value = float(value)
+        if min_val <= value <= max_val:
+            return True, ""
+        else:
+            return False, f"{hormone_name} must be between {min_val} and {max_val}"
+    except:
+        return False, f"Please enter a valid {hormone_name} value"
+
+
+def calculate_bmi(weight, height):
+    """Calculate BMI from weight and height."""
+    if weight and height and height > 0:
+        height_m = height / 100  # Convert cm to meters
+        return round(weight / (height_m**2), 1)
+    return None
+
+
+def render_health_input_page():
+    """Render the health input form page."""
+    st.markdown(
+        """
+    <div class="card">
+        <h2 class="card-title">📝 Health Information Form</h2>
+        <p style="font-family: 'Inter', sans-serif; line-height: 1.6;">
+            Please provide your health information to receive personalized predictions. 
+            All fields marked with * are required. Your data is kept private and secure.
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    # Initialize form data if not exists
+    if "health_data" not in st.session_state:
+        st.session_state.health_data = {}
+
+    # Progress tracking
+    total_sections = 4
+    completed_sections = 0
+
+    # Check completed sections
+    if st.session_state.health_data.get("demographics_completed", False):
+        completed_sections += 1
+    if st.session_state.health_data.get("hormones_completed", False):
+        completed_sections += 1
+    if st.session_state.health_data.get("lifestyle_completed", False):
+        completed_sections += 1
+    if st.session_state.health_data.get("medical_history_completed", False):
+        completed_sections += 1
+
+    # Progress bar
+    progress = completed_sections / total_sections
+    st.progress(progress)
+    st.markdown(f"**Progress:** {completed_sections}/{total_sections} sections completed")
+
+    # Create tabs for different sections
+    tab1, tab2, tab3, tab4 = st.tabs(
+        ["👤 Demographics", "🧪 Hormones", "🏃‍♀️ Lifestyle", "🏥 Medical History"]
+    )
+
+    with tab1:
+        render_demographics_section()
+
+    with tab2:
+        render_hormones_section()
+
+    with tab3:
+        render_lifestyle_section()
+
+    with tab4:
+        render_medical_history_section()
+
+    # Form validation and submission
+    if st.button("📊 Get My Predictions", use_container_width=True, type="primary"):
+        if validate_form():
+            st.success("✅ Form completed successfully! Redirecting to predictions...")
+            st.session_state.current_page = "Predictions"
+            st.rerun()
+        else:
+            st.error("⚠️ Please complete all required fields before proceeding.")
+
+
+def render_demographics_section():
+    """Render the demographics section."""
+    st.markdown("### 👤 Demographics")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        age = st.number_input(
+            "Age *",
+            min_value=18,
+            max_value=100,
+            value=st.session_state.health_data.get("age", 35),
+            help="Your current age in years",
+        )
+
+        height = st.number_input(
+            "Height (cm)",
+            min_value=100,
+            max_value=250,
+            value=st.session_state.health_data.get("height", 165),
+            help="Your height in centimeters",
+        )
+
+    with col2:
+        weight = st.number_input(
+            "Weight (kg)",
+            min_value=30,
+            max_value=300,
+            value=st.session_state.health_data.get("weight", 65),
+            help="Your current weight in kilograms",
+        )
+
+        # Auto-calculate BMI
+        bmi = calculate_bmi(weight, height)
+        if bmi:
+            st.metric("Calculated BMI", f"{bmi:.1f}")
+            st.session_state.health_data["bmi"] = bmi
+
+    # Store data
+    st.session_state.health_data.update(
+        {"age": age, "height": height, "weight": weight, "demographics_completed": True}
+    )
+
+    # Validation feedback
+    age_valid, age_msg = validate_age(age)
+    if not age_valid:
+        st.error(age_msg)
+
+    if bmi:
+        bmi_valid, bmi_msg = validate_bmi(bmi)
+        if not bmi_valid:
+            st.error(bmi_msg)
+
+
+def render_hormones_section():
+    """Render the hormones section."""
+    st.markdown("### 🧪 Hormone Levels")
+    st.markdown("*These are optional but will improve prediction accuracy if available.*")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fsh = st.number_input(
+            "FSH (mIU/mL)",
+            min_value=0.0,
+            max_value=200.0,
+            value=st.session_state.health_data.get("fsh"),
+            help="Follicle Stimulating Hormone level",
+        )
+
+        amh = st.number_input(
+            "AMH (ng/mL)",
+            min_value=0.0,
+            max_value=20.0,
+            value=st.session_state.health_data.get("amh"),
+            help="Anti-Mullerian Hormone level",
+        )
+
+    with col2:
+        estradiol = st.number_input(
+            "Estradiol (pg/mL)",
+            min_value=0.0,
+            max_value=1000.0,
+            value=st.session_state.health_data.get("estradiol"),
+            help="Estradiol level",
+        )
+
+        # Cycle regularity
+        regular_cycles = st.selectbox(
+            "Menstrual Cycle Regularity",
+            ["Regular", "Irregular", "Not applicable"],
+            index=0 if st.session_state.health_data.get("regular_cycles") else 2,
+        )
+
+    # Store data
+    st.session_state.health_data.update(
+        {
+            "fsh": fsh if fsh > 0 else None,
+            "amh": amh if amh > 0 else None,
+            "estradiol": estradiol if estradiol > 0 else None,
+            "regular_cycles": regular_cycles == "Regular",
+            "hormones_completed": True,
+        }
+    )
+
+    # Validation feedback
+    fsh_valid, fsh_msg = validate_hormone_value(fsh, "FSH", 0, 200)
+    if not fsh_valid:
+        st.error(fsh_msg)
+
+    amh_valid, amh_msg = validate_hormone_value(amh, "AMH", 0, 20)
+    if not amh_valid:
+        st.error(amh_msg)
+
+    estradiol_valid, estradiol_msg = validate_hormone_value(estradiol, "Estradiol", 0, 1000)
+    if not estradiol_valid:
+        st.error(estradiol_msg)
+
+
+def render_lifestyle_section():
+    """Render the lifestyle section."""
+    st.markdown("### 🏃‍♀️ Lifestyle Factors")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        exercise_frequency = st.selectbox(
+            "Exercise Frequency per Week", ["0", "1-2", "3-4", "5-6", "Daily"], index=2
+        )
+
+        sleep_hours = st.slider(
+            "Average Sleep Hours per Night",
+            min_value=3.0,
+            max_value=12.0,
+            value=st.session_state.health_data.get("sleep_hours", 7.5),
+            step=0.5,
+            help="How many hours do you typically sleep per night?",
+        )
+
+    with col2:
+        stress_level = st.slider(
+            "Current Stress Level",
+            min_value=1,
+            max_value=10,
+            value=st.session_state.health_data.get("stress_level", 5),
+            help="Rate your current stress level (1 = very low, 10 = very high)",
+        )
+
+        diet_quality = st.selectbox("Diet Quality", ["Poor", "Fair", "Good", "Excellent"], index=2)
+
+    # Store data
+    exercise_map = {"0": 0, "1-2": 1.5, "3-4": 3.5, "5-6": 5.5, "Daily": 7}
+
+    st.session_state.health_data.update(
+        {
+            "exercise_frequency": exercise_map[exercise_frequency],
+            "sleep_hours": sleep_hours,
+            "stress_level": stress_level,
+            "diet_quality": diet_quality,
+            "lifestyle_completed": True,
+        }
+    )
+
+
+def render_medical_history_section():
+    """Render the medical history section."""
+    st.markdown("### 🏥 Medical History")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        smoking_status = st.selectbox("Smoking Status", ["Never", "Former", "Current"], index=0)
+
+        family_history = st.selectbox(
+            "Family History of Early Menopause", ["No", "Yes", "Unknown"], index=0
+        )
+
+    with col2:
+        medications = st.text_area(
+            "Current Medications",
+            value=st.session_state.health_data.get("medications", ""),
+            help="List any medications you're currently taking (optional)",
+        )
+
+        chronic_conditions = st.text_area(
+            "Chronic Conditions",
+            value=st.session_state.health_data.get("chronic_conditions", ""),
+            help="List any chronic health conditions (optional)",
+        )
+
+    # Store data
+    st.session_state.health_data.update(
+        {
+            "smoking_status": smoking_status == "Current",
+            "family_history_menopause": family_history == "Yes",
+            "medications": medications,
+            "chronic_conditions": chronic_conditions,
+            "medical_history_completed": True,
+        }
+    )
+
+
+def validate_form():
+    """Validate the entire form."""
+    required_fields = ["age", "demographics_completed"]
+    optional_sections = ["hormones_completed", "lifestyle_completed", "medical_history_completed"]
+
+    # Check required fields
+    for field in required_fields:
+        if field not in st.session_state.health_data:
+            return False
+
+    # Check if at least one optional section is completed
+    completed_optional = any(
+        st.session_state.health_data.get(section, False) for section in optional_sections
+    )
+
+    return completed_optional
+
+
+def render_form_summary():
+    """Render a summary of the form data."""
+    if st.session_state.health_data:
+        st.markdown("### 📋 Form Summary")
+
+        # Demographics
+        if st.session_state.health_data.get("demographics_completed"):
+            st.markdown("**Demographics:** ✅ Completed")
+            st.markdown(f"- Age: {st.session_state.health_data.get('age', 'N/A')}")
+            st.markdown(f"- BMI: {st.session_state.health_data.get('bmi', 'N/A')}")
+
+        # Hormones
+        if st.session_state.health_data.get("hormones_completed"):
+            st.markdown("**Hormones:** ✅ Completed")
+            hormones = []
+            if st.session_state.health_data.get("fsh"):
+                hormones.append(f"FSH: {st.session_state.health_data['fsh']}")
+            if st.session_state.health_data.get("amh"):
+                hormones.append(f"AMH: {st.session_state.health_data['amh']}")
+            if st.session_state.health_data.get("estradiol"):
+                hormones.append(f"Estradiol: {st.session_state.health_data['estradiol']}")
+
+            if hormones:
+                st.markdown("- " + ", ".join(hormones))
+            else:
+                st.markdown("- No hormone data provided")
+
+        # Lifestyle
+        if st.session_state.health_data.get("lifestyle_completed"):
+            st.markdown("**Lifestyle:** ✅ Completed")
+            st.markdown(
+                f"- Exercise: {st.session_state.health_data.get('exercise_frequency', 'N/A')} times/week"
+            )
+            st.markdown(
+                f"- Sleep: {st.session_state.health_data.get('sleep_hours', 'N/A')} hours/night"
+            )
+            st.markdown(f"- Stress: {st.session_state.health_data.get('stress_level', 'N/A')}/10")
+
+        # Medical History
+        if st.session_state.health_data.get("medical_history_completed"):
+            st.markdown("**Medical History:** ✅ Completed")
+            st.markdown(
+                f"- Smoking: {'Yes' if st.session_state.health_data.get('smoking_status') else 'No'}"
+            )
+            st.markdown(
+                f"- Family History: {'Yes' if st.session_state.health_data.get('family_history_menopause') else 'No'}"
+            )
