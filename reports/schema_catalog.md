@@ -1,5 +1,7 @@
 # Unified Dataset Schema Catalog
 
+**Author:** Vedika  
+**Project:** Hackaging AI - MenoBalance AI Platform  
 **Total Records:** 26,946
 **Total Fields:** 71
 

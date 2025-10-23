@@ -5,7 +5,10 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.95+-green.svg)](https://fastapi.tiangolo.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive AI-powered platform for menopause prediction, symptom tracking, and wellness management with empathetic design and educational support.
+**Author:** Vedika  
+**Project:** Hackaging AI - MenoBalance AI Platform  
+
+A comprehensive AI-powered platform for menopause prediction, symptom tracking, and wellness management with empathetic design and educational support. This project integrates multiple datasets and advanced machine learning techniques to provide personalized predictions and wellness guidance for women experiencing menopause.
 
 ## 🌟 Key Features
 
@@ -58,12 +61,20 @@ cd menopause-prediction-hackaging-ai
    pip install -r requirements.txt
    ```
 
-3. **Run the Streamlit application**
+3. **Set up environment variables**
    ```bash
-streamlit run src/app_streamlit_main.py
-```
+   # Copy environment template
+   cp .env.example .env
+   # Edit .env file with your Nebius AI API key
+   ```
 
-4. **Access the application**
+4. **Run the Streamlit application**
+   ```bash
+   cd menobalance
+   python -m streamlit run src/app_streamlit_main.py --server.port 8501
+   ```
+
+5. **Access the application**
 Open your browser to `http://localhost:8501`
 
 ### Docker Deployment
@@ -79,24 +90,38 @@ docker run -p 8501:8501 menobalance-ai
 ## 📁 Project Structure
 
 ```
-menopause-prediction-hackaging-ai/
+menobalance/
 ├── src/                          # Source code
 │   ├── app_streamlit_main.py     # Main Streamlit application
-│   ├── api_endpoint.py           # FastAPI backend
-│   ├── api_integration.py        # API integration layer
 │   ├── prediction_service.py     # Core prediction logic
-│   ├── prediction_service_fallback.py  # Fallback predictions
+│   ├── chatbot_nebius.py         # Nebius AI integration
+│   ├── pdf_generator.py          # PDF report generation
+│   ├── harmonize/                # Data harmonization modules
+│   ├── ingest/                   # Data ingestion modules
+│   ├── merge/                    # Data merging modules
 │   └── pages/                    # Streamlit pages
 │       ├── health_input.py       # Health data input
+│       ├── predictions.py        # AI predictions display
 │       ├── wellness_dashboard.py # Wellness tracking
-│       ├── model_explainability.py # Model insights
-│       └── ethics_bias.py    # Ethics documentation
+│       ├── chatbot.py            # AI chatbot interface
+│       ├── education.py          # Educational content
+│       ├── export.py             # Data export functionality
+│       └── model_evaluation.py   # Model evaluation
 ├── models/                       # Trained ML models
+│   ├── task_specific_classification/  # Classification models
+│   ├── task_specific_survival/        # Survival analysis models
+│   └── task_specific_symptom/         # Symptom prediction models
 ├── data/                        # Datasets and processed data
+│   ├── raw/                     # Original datasets
+│   ├── processed/               # Processed datasets
+│   └── clean/                   # Cleaned datasets
 ├── reports/                     # Analysis reports and visualizations
+│   ├── shap/                    # SHAP explainability plots
+│   └── static/                  # Static analysis reports
 ├── docs/                        # Documentation
+├── notebooks/                   # Jupyter notebooks
 ├── requirements.txt             # Python dependencies
-├── Dockerfile                   # Docker configuration
+├── .env                         # Environment variables
 └── README.md                    # This file
 ```
 
@@ -255,7 +280,7 @@ streamlit run src/app_streamlit_main.py
 
 - **Issues**: [GitHub Issues](https://github.com/vedika1509/menopause-prediction-hackaging-ai/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/vedika1509/menopause-prediction-hackaging-ai/discussions)
-- **Email**: support@menobalance.ai
+- **Email**: vedikagoyal1509@gmail.com
 
 ## 📄 License
 
@@ -263,9 +288,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Data Sources**: NHANES, SWAN, UK Biobank, Synthea
-- **ML Libraries**: scikit-learn, XGBoost, CatBoost
-- **Visualization**: Plotly, Streamlit
+**Project Author:** Vedika  
+**Platform:** Hackaging AI by OpenLongevity  
+
+### **Data Sources**
+- **NHANES**: National Health and Nutrition Examination Survey
+- **SWAN**: Study of Women's Health Across the Nation
+- **UK Biobank**: Large-scale biomedical database
+- **Synthea**: Synthetic patient data generator
+- **Wearables**: Physical activity and health monitoring data
+
+### **Technology Stack**
+- **ML Libraries**: scikit-learn, XGBoost, CatBoost, Random Forest
+- **Visualization**: Plotly, Streamlit, Matplotlib
+- **AI Integration**: Nebius AI for intelligent chatbot functionality
+- **Web Framework**: Streamlit for interactive user interface
+
+### **Special Thanks**
+- **OpenLongevity** for providing the Hackaging AI platform and resources
+- **Nebius.ai** for AI capabilities and intelligent chatbot functionality
+- **AthenaDAO** for guidance in developing ethical AI solutions for women's health
 - **Community**: Open source contributors and women's health advocates
 
 ---

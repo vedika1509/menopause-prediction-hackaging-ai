@@ -5,11 +5,16 @@ Displays model performance metrics and evaluation results.
 
 import json
 import os
+import warnings
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+# Suppress Plotly deprecation warnings
+warnings.filterwarnings("ignore", message="The keyword arguments have been deprecated")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="plotly")
 
 
 def render_model_evaluation_page():
@@ -191,7 +196,7 @@ def render_classification_metrics(classification_data):
 
     fig.update_layout(title="Confusion Matrix", height=400, template="plotly_white")
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Performance metrics
     col1, col2 = st.columns(2)
@@ -239,7 +244,7 @@ def render_classification_metrics(classification_data):
             template="plotly_white",
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def render_survival_metrics(survival_data):
@@ -284,7 +289,7 @@ def render_survival_metrics(survival_data):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def render_symptom_metrics(symptom_data):
@@ -341,7 +346,7 @@ def render_symptom_metrics(symptom_data):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def render_model_comparison(model_insights):
@@ -381,7 +386,7 @@ def render_model_comparison(model_insights):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def render_validation_results(model_insights):
@@ -424,7 +429,7 @@ def render_validation_results(model_insights):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Validation summary
     st.markdown("#### Validation Summary")

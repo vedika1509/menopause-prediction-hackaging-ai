@@ -283,7 +283,7 @@ def render_contact_info():
             """
         <div class="card">
             <h4 style="color: #9B59B6;">General Inquiries</h4>
-            <p><strong>Email:</strong> support@menobalance.ai</p>
+            <p><strong>Email:</strong> vedikagoyal1509@gmail.com</p>
             <p><strong>GitHub:</strong> <a href="https://github.com/vedika1509/menopause-prediction-hackaging-ai" target="_blank">Project Repository</a></p>
             <p><strong>Issues:</strong> <a href="https://github.com/vedika1509/menopause-prediction-hackaging-ai/issues" target="_blank">Report Issues</a></p>
         </div>
@@ -296,7 +296,7 @@ def render_contact_info():
             """
         <div class="card">
             <h4 style="color: #9B59B6;">Ethics Concerns</h4>
-            <p><strong>Email:</strong> ethics@menobalance.ai</p>
+            <p><strong>Email:</strong> vedikagoyal1509@gmail.com</p>
             <p><strong>Response Time:</strong> Within 48 hours</p>
             <p><strong>Confidentiality:</strong> All concerns are treated confidentially</p>
         </div>
@@ -322,7 +322,7 @@ def render_contact_info():
             "Contact Email (Optional)", placeholder="your.email@example.com"
         )
 
-        if st.form_submit_button("Submit Feedback", use_container_width=True):
+        if st.form_submit_button("Submit Feedback", width="stretch"):
             # In a real implementation, this would send the feedback
             st.success("✅ Thank you for your feedback! We'll review it and respond if needed.")
 

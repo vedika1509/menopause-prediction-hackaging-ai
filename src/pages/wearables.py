@@ -10,6 +10,11 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+import warnings
+
+# Suppress Plotly deprecation warnings
+warnings.filterwarnings("ignore", message="The keyword arguments have been deprecated")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="plotly")
 
 
 def render_wearables_page():
@@ -79,10 +84,11 @@ def render_device_connection():
         )
 
     # Sync button
-    if st.button("🔄 Sync All Devices", use_container_width=True, type="primary"):
+    if st.button("🔄 Sync All Devices", width="stretch", type="primary"):
         with st.spinner("Syncing devices..."):
             # Simulate sync delay
             import time
+
             time.sleep(2)
         st.success("✅ All devices synced successfully!")
 
@@ -99,17 +105,17 @@ def render_data_sync():
     with col1:
         st.markdown("#### 📈 Activity Data")
         activity_df = pd.DataFrame(wearable_data["activity"])
-        st.dataframe(activity_df, use_container_width=True)
+        st.dataframe(activity_df, width="stretch")
 
     with col2:
         st.markdown("#### 💤 Sleep Data")
         sleep_df = pd.DataFrame(wearable_data["sleep"])
-        st.dataframe(sleep_df, use_container_width=True)
+        st.dataframe(sleep_df, width="stretch")
 
     # Heart rate data
     st.markdown("#### ❤️ Heart Rate Data")
     hr_df = pd.DataFrame(wearable_data["heart_rate"])
-    st.dataframe(hr_df, use_container_width=True)
+    st.dataframe(hr_df, width="stretch")
 
 
 def render_health_metrics():
@@ -160,7 +166,7 @@ def render_activity_charts(dates):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Activity summary
     col1, col2, col3 = st.columns(3)
@@ -200,7 +206,7 @@ def render_sleep_charts(dates):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Sleep summary
     col1, col2, col3 = st.columns(3)
@@ -250,7 +256,7 @@ def render_heart_rate_charts(dates):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Heart rate summary
     col1, col2, col3 = st.columns(3)

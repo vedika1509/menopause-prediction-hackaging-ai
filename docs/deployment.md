@@ -1,5 +1,8 @@
 # Deployment Guide for MenoBalance AI
 
+**Author:** Vedika  
+**Project:** Hackaging AI - MenoBalance AI Platform  
+
 This guide provides comprehensive instructions for deploying MenoBalance AI to various platforms.
 
 ## Prerequisites
@@ -29,7 +32,7 @@ pip install -r requirements.txt
 Copy the environment template and configure:
 
 ```bash
-cp env.example .env
+cp .env.example .env  # or create .env file manually
 ```
 
 Edit `.env` file with your configuration:

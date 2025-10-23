@@ -10,6 +10,13 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+try:
+    load_dotenv()
+except Exception as e:
+    logger.warning(f"Could not load .env file: {e}")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,14 +30,16 @@ class NebiusAIService:
 
     def __init__(self):
         """Initialize the Nebius AI service."""
-        self.api_key = os.getenv("NEBIUS_AI_API_KEY")
-        self.base_url = "https://nebius-inference.eu.auth0.com/api/v2"  # Nebius AI endpoint from JWT token
+        self.api_key = os.getenv("NEBIUS_AI_API_KEY") or os.getenv("NEBIUS_API_KEY")
+        self.base_url = "https://api.studio.nebius.com/v1"  # Correct Nebius AI endpoint
         self.session_context = {}
 
         # Fallback content for when Nebius AI is unavailable
         self.fallback_responses = self._load_fallback_content()
 
-        if not self.api_key:
+        if self.api_key:
+            logger.info("NEBIUS_AI_API_KEY found. Nebius AI integration enabled.")
+        else:
             logger.warning("NEBIUS_AI_API_KEY not found. Using fallback responses.")
 
     def _load_fallback_content(self) -> Dict[str, Any]:
@@ -87,14 +96,42 @@ class NebiusAIService:
                 "Content-Type": "application/json",
             }
 
+            # Format the request for Nebius AI chat completion
+            if endpoint == "chat":
+                # Create the proper request format for Nebius AI based on their documentation
+                request_data = {
+                    "model": "deepseek-ai/DeepSeek-R1-0528",  # Using the model from Nebius AI docs
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": data.get("system_prompt", "You are a helpful assistant."),
+                        },
+                        {
+                            "role": "user",
+                            "content": [{"type": "text", "text": data.get("user_message", "")}],
+                        },
+                    ],
+                    "max_tokens": 500,
+                    "temperature": 0.7,
+                }
+            else:
+                request_data = data
+
             response = requests.post(
-                f"{self.base_url}/{endpoint}", headers=headers, json=data, timeout=10
+                f"{self.base_url}/chat/completions",
+                headers=headers,
+                json=request_data,
+                timeout=90,
             )
 
             if response.status_code == 200:
-                return response.json()
+                result = response.json()
+                # Extract the message from Nebius AI response
+                if endpoint == "chat" and "choices" in result:
+                    return {"message": result["choices"][0]["message"]["content"]}
+                return result
             else:
-                logger.error(f"Nebius AI API error: {response.status_code}")
+                logger.error(f"Nebius AI API error: {response.status_code} - {response.text}")
                 return None
 
         except Exception as e:
@@ -113,9 +150,25 @@ class NebiusAIService:
             AI-generated response
         """
         try:
-            # Prepare context for Nebius AI
+            # Create counseling prompt for Nebius AI
+            counseling_prompt = """You are a compassionate and knowledgeable menopause counselor and women's health specialist. 
+            
+            The user may be experiencing menopause-related issues and needs empathetic support and guidance. 
+            
+            Please respond as a caring counselor who:
+            - Shows empathy and understanding
+            - Provides evidence-based information about menopause
+            - Offers practical coping strategies
+            - Encourages professional medical consultation when appropriate
+            - Uses a warm, supportive tone
+            - Validates their experiences and concerns
+            
+            Remember to be sensitive to the personal nature of their questions and maintain a professional yet caring demeanor."""
+
+            # Prepare context for Nebius AI with counseling prompt
             context_data = {
-                "message": user_message,
+                "system_prompt": counseling_prompt,
+                "user_message": user_message,
                 "context": context or {},
                 "timestamp": datetime.now().isoformat(),
                 "session_id": context.get("session_id") if context else None,
@@ -138,17 +191,17 @@ class NebiusAIService:
         self, user_message: str, context: Optional[Dict[str, Any]]
     ) -> str:
         """Get fallback chat response when Nebius AI is unavailable."""
-        # Simple keyword-based responses
+        # Simple keyword-based responses with counseling tone
         message_lower = user_message.lower()
 
         if any(word in message_lower for word in ["hot flash", "hot flush", "sweating"]):
-            return "Hot flashes can be challenging. Try wearing layers, using a fan, drinking cool water, and avoiding triggers like spicy foods and stress. If they're severe, consider discussing options with your healthcare provider."
+            return "I understand that hot flashes can be really challenging and disruptive to your daily life. You're not alone in this experience. Try wearing layers that you can easily remove, using a fan, drinking cool water, and avoiding triggers like spicy foods and stress. If they're severely impacting your quality of life, I'd encourage you to discuss treatment options with your healthcare provider. Remember, there are effective ways to manage this symptom."
 
         elif any(word in message_lower for word in ["sleep", "insomnia", "tired"]):
-            return "Sleep disturbances are common during menopause. Try maintaining a regular sleep schedule, keeping your bedroom cool, avoiding caffeine in the afternoon, and practicing relaxation techniques before bed."
+            return "Sleep disturbances during menopause are unfortunately very common, and I know how frustrating this can be. Your body is going through significant hormonal changes that affect sleep. Try maintaining a regular sleep schedule, keeping your bedroom cool and dark, avoiding caffeine in the afternoon, and practicing relaxation techniques like deep breathing before bed. If sleep issues persist, consider discussing this with your healthcare provider as there are treatments that can help."
 
         elif any(word in message_lower for word in ["mood", "depression", "anxiety", "emotional"]):
-            return "Mood changes are a normal part of menopause. Regular exercise, stress management, social support, and adequate sleep can help. If you're experiencing persistent mood changes, please consider speaking with a healthcare provider."
+            return "I want you to know that mood changes during menopause are completely normal and you're not alone in experiencing this. The hormonal fluctuations can significantly impact your emotional well-being. It's important to be gentle with yourself during this time. Regular exercise, stress management techniques, maintaining social connections, and ensuring adequate sleep can all help support your emotional health. If you're experiencing persistent mood changes that are affecting your daily life, I strongly encourage you to speak with a healthcare provider or mental health professional who can provide additional support and treatment options."
 
         elif any(word in message_lower for word in ["weight", "gain", "lose"]):
             return "Weight changes during menopause are common due to hormonal shifts. Focus on a balanced diet, regular exercise, and maintaining muscle mass through strength training. Remember, your worth isn't defined by your weight."
@@ -173,18 +226,40 @@ class NebiusAIService:
             List of personalized recommendations
         """
         try:
-            # Prepare data for Nebius AI
+            # Create counseling prompt for recommendations
+            counseling_prompt = """You are a compassionate menopause counselor and women's health specialist. 
+            
+            Based on the user's health data and predictions, provide personalized, empathetic recommendations that:
+            - Show understanding and validation of their experience
+            - Offer practical, evidence-based coping strategies
+            - Consider their specific menopause stage and symptoms
+            - Encourage professional medical consultation when appropriate
+            - Use a warm, supportive tone
+            - Prioritize their wellbeing and quality of life
+            
+            Format your response as a list of recommendations with categories, titles, descriptions, and priority levels."""
+
+            # Prepare data for Nebius AI with counseling prompt
             recommendation_data = {
+                "system_prompt": counseling_prompt,
+                "user_message": f"Please provide personalized recommendations based on this health data: {health_data}",
                 "health_data": health_data,
                 "timestamp": datetime.now().isoformat(),
                 "request_type": "recommendations",
             }
 
             # Try Nebius AI first
-            response = self._make_api_request("recommendations", recommendation_data)
+            response = self._make_api_request("chat", recommendation_data)
 
-            if response and "recommendations" in response:
-                return response["recommendations"]
+            if response and "message" in response:
+                # Parse the AI response into recommendation format
+                ai_response = response["message"]
+                # For now, return fallback recommendations with AI-enhanced descriptions
+                recommendations = self._get_fallback_recommendations(health_data)
+                # Add AI insight to the first recommendation
+                if recommendations:
+                    recommendations[0]["ai_insight"] = ai_response
+                return recommendations
 
             # Fallback to local recommendations
             return self._get_fallback_recommendations(health_data)
@@ -273,18 +348,40 @@ class NebiusAIService:
             Educational content dictionary
         """
         try:
-            # Prepare data for Nebius AI
+            # Create counseling prompt for educational content
+            counseling_prompt = """You are a compassionate menopause counselor and women's health educator. 
+            
+            Provide educational content about the requested topic that:
+            - Uses clear, accessible language that's easy to understand
+            - Shows empathy and understanding for women's experiences
+            - Provides evidence-based information
+            - Offers practical tips and strategies
+            - Encourages professional medical consultation when appropriate
+            - Uses a warm, supportive tone
+            - Validates that menopause experiences are normal and manageable
+            
+            Structure your response with a clear title and comprehensive, empathetic content."""
+
+            # Prepare data for Nebius AI with counseling prompt
             content_data = {
+                "system_prompt": counseling_prompt,
+                "user_message": f"Please provide educational content about: {topic}",
                 "topic": topic,
                 "timestamp": datetime.now().isoformat(),
                 "request_type": "educational_content",
             }
 
             # Try Nebius AI first
-            response = self._make_api_request("education", content_data)
+            response = self._make_api_request("chat", content_data)
 
-            if response and "content" in response:
-                return response["content"]
+            if response and "message" in response:
+                # Parse the AI response into educational content format
+                ai_response = response["message"]
+                return {
+                    "title": f"Understanding {topic.title()}",
+                    "content": ai_response,
+                    "ai_enhanced": True,
+                }
 
             # Fallback to local content
             return self._get_fallback_educational_content(topic)
@@ -297,17 +394,29 @@ class NebiusAIService:
         """Get fallback educational content when Nebius AI is unavailable."""
         topic_lower = topic.lower()
 
-        # Check for specific topics
+        # Check for specific topics with counseling tone
         if any(word in topic_lower for word in ["stage", "phases", "pre", "peri", "post"]):
-            return self.fallback_responses["educational_content"]["menopause_stages"]
+            content = self.fallback_responses["educational_content"]["menopause_stages"]
+            content["content"] = (
+                f"I understand you're seeking information about menopause stages. {content['content']} Remember, every woman's journey is unique, and it's completely normal to have questions about what to expect during this transition."
+            )
+            return content
         elif any(word in topic_lower for word in ["symptom", "hot flash", "mood", "sleep"]):
-            return self.fallback_responses["educational_content"]["symptoms"]
+            content = self.fallback_responses["educational_content"]["symptoms"]
+            content["content"] = (
+                f"I know that menopause symptoms can be challenging and disruptive. {content['content']} Please remember that you're not alone in experiencing these symptoms, and there are many effective ways to manage them with support from healthcare providers."
+            )
+            return content
         elif any(word in topic_lower for word in ["lifestyle", "exercise", "diet", "stress"]):
-            return self.fallback_responses["educational_content"]["lifestyle"]
+            content = self.fallback_responses["educational_content"]["lifestyle"]
+            content["content"] = (
+                f"Taking care of your overall wellbeing during menopause is so important. {content['content']} Making small, sustainable changes can have a big impact on how you feel during this transition."
+            )
+            return content
         else:
             return {
                 "title": "Menopause Information",
-                "content": "Menopause is a natural transition that every woman experiences. It's important to understand your body's changes and work with healthcare providers to manage symptoms and maintain health.",
+                "content": "I want you to know that menopause is a natural transition that every woman experiences, and it's completely normal to have questions or concerns. Understanding your body's changes and working with healthcare providers to manage symptoms and maintain health is an important part of this journey. Remember, you're not alone, and there are many resources and support systems available to help you through this transition.",
             }
 
     def update_session_context(self, session_id: str, context: Dict[str, Any]):

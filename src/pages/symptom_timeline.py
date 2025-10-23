@@ -4,12 +4,17 @@ Interactive timeline for tracking menopause symptoms over time.
 """
 
 import random
+import warnings
 from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+
+# Suppress Plotly deprecation warnings
+warnings.filterwarnings("ignore", message="The keyword arguments have been deprecated")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="plotly")
 
 
 def render_symptom_timeline_page():
@@ -104,7 +109,7 @@ def render_symptom_input_form():
             height=100,
         )
 
-        if st.form_submit_button("💾 Save Today's Symptoms", use_container_width=True):
+        if st.form_submit_button("💾 Save Today's Symptoms", width="stretch"):
             # Save today's symptom data
             today_data = {
                 "date": datetime.now().date(),
@@ -201,7 +206,7 @@ def render_overall_trend_chart(df):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Trend interpretation
     if len(df) > 1:
@@ -251,7 +256,7 @@ def render_hot_flash_chart(df):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Hot flash insights
     avg_hot_flashes = df["hot_flashes"].mean()
@@ -311,7 +316,7 @@ def render_sleep_mood_chart(df):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Sleep and mood insights
     avg_sleep = df["sleep_disturbance"].mean()
@@ -377,7 +382,7 @@ def render_pattern_analysis():
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
     # Pattern insights
     st.markdown("#### 💡 Pattern Insights")
@@ -423,7 +428,7 @@ def render_pattern_analysis():
             template="plotly_white",
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def generate_sample_symptom_data():

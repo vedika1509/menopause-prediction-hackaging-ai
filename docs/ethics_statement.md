@@ -1,5 +1,8 @@
 # Ethics Statement - MenoBalance AI
 
+**Author:** Vedika  
+**Project:** Hackaging AI - MenoBalance AI Platform  
+
 ## Our Commitment to Ethical AI
 
 MenoBalance AI is committed to developing and deploying artificial intelligence systems that are ethical, fair, transparent, and beneficial to women's health. We recognize the profound responsibility that comes with creating AI tools for healthcare and are dedicated to upholding the highest ethical standards.
@@ -204,7 +207,7 @@ MenoBalance AI is committed to developing and deploying artificial intelligence 
 
 We welcome feedback, questions, and concerns about our ethical practices:
 
-- **Email**: ethics@menobalance.ai
+- **Email**: vedikagoyal1509@gmail.com
 - **GitHub Issues**: For technical and ethical concerns
 - **Community Forum**: For general discussions and feedback
 

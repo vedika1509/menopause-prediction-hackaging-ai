@@ -2,6 +2,13 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import json
+import sys
+import os
+
+# Add src directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from pdf_generator import generate_health_summary_pdf, create_download_button
 
 def render_export_page():
     """Render the export page for downloading health summaries."""
@@ -35,18 +42,76 @@ def render_pdf_export():
     """Render PDF export functionality."""
     st.markdown("#### 📄 PDF Health Summary")
     
-    # Generate PDF content
-    pdf_content = generate_pdf_content()
+    st.markdown("""
+    Generate a comprehensive PDF health summary including your personal information, 
+    AI predictions, wellness metrics, and personalized recommendations.
+    """)
+    
+    # Get user data
+    user_data = st.session_state.get('health_data', {})
+    predictions = st.session_state.get('predictions', {})
+    wellness_data = st.session_state.get('wellness_scores', [])
+    
+    # If wellness data exists, get the latest entry
+    latest_wellness = {}
+    if wellness_data:
+        latest_wellness = wellness_data[-1] if isinstance(wellness_data, list) else wellness_data
     
     # Create download button
-    if st.button("📥 Download PDF Summary", type="primary"):
-        st.success("PDF generation feature will be implemented with reportlab library")
-        st.info("For now, you can copy the summary below and save it manually")
-        
-        # Display the content that would be in the PDF
+    if st.button("📥 Generate & Download PDF Summary", type="primary"):
+        try:
+            with st.spinner("Generating PDF report..."):
+                # Generate PDF
+                filename = generate_health_summary_pdf(
+                    user_data=user_data,
+                    predictions=predictions,
+                    wellness_data=latest_wellness
+                )
+                
+                st.success("PDF generated successfully!")
+                
+                # Create download button
+                create_download_button(filename)
+                
+                # Clean up the temporary file
+                if os.path.exists(filename):
+                    os.remove(filename)
+                    
+        except Exception as e:
+            st.error(f"Error generating PDF: {str(e)}")
+            st.info("Please ensure you have entered some health data first.")
+    
+    # Show preview of what will be included
+    if user_data or predictions or wellness_data:
         st.markdown("---")
-        st.markdown("### Health Summary Preview")
-        st.markdown(pdf_content)
+        st.markdown("### 📋 Report Preview")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Personal Information:**")
+            if user_data:
+                for key, value in user_data.items():
+                    if key != 'symptoms':  # Skip symptoms for preview
+                        st.write(f"• {key.replace('_', ' ').title()}: {value}")
+            else:
+                st.write("No personal data available")
+        
+        with col2:
+            st.markdown("**Latest Wellness Metrics:**")
+            if latest_wellness:
+                for key, value in latest_wellness.items():
+                    if isinstance(value, (int, float)):
+                        st.write(f"• {key.replace('_', ' ').title()}: {value}")
+            else:
+                st.write("No wellness data available")
+        
+        if predictions:
+            st.markdown("**AI Predictions:**")
+            for pred_type, pred_data in predictions.items():
+                st.write(f"• {pred_type.replace('_', ' ').title()}: {pred_data}")
+    else:
+        st.info("Enter your health data and generate predictions to create a comprehensive PDF report.")
 
 def render_csv_export():
     """Render CSV export functionality."""

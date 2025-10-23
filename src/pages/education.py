@@ -128,7 +128,7 @@ def render_menopause_basics(nebius_service):
             st.markdown(description)
 
     # Generate dynamic content using Nebius AI
-    if st.button("🤖 Get Personalized Information", use_container_width=True):
+    if st.button("🤖 Get Personalized Information", width="stretch"):
         with st.spinner("Generating personalized content..."):
             content = nebius_service.generate_educational_content("menopause stages and symptoms")
             st.markdown(f"**{content['title']}**")
@@ -197,7 +197,7 @@ def render_management_strategies(nebius_service):
         st.markdown(f"**{remedy}** - {description}")
 
     # Generate personalized recommendations
-    if st.button("🎯 Get Personalized Management Tips", use_container_width=True):
+    if st.button("🎯 Get Personalized Management Tips", width="stretch"):
         with st.spinner("Generating personalized recommendations..."):
             content = nebius_service.generate_educational_content("menopause management strategies")
             st.markdown(f"**{content['title']}**")
@@ -274,7 +274,7 @@ def render_lifestyle_nutrition(nebius_service):
         st.markdown(f"**{technique}** - {description}")
 
     # Generate personalized nutrition plan
-    if st.button("🍎 Get Personalized Nutrition Plan", use_container_width=True):
+    if st.button("🍎 Get Personalized Nutrition Plan", width="stretch"):
         with st.spinner("Generating personalized nutrition recommendations..."):
             content = nebius_service.generate_educational_content(
                 "menopause nutrition and lifestyle"
@@ -343,7 +343,7 @@ def render_ai_education(nebius_service):
 
     col1, col2 = st.columns([1, 4])
     with col1:
-        if st.button("Ask AI", use_container_width=True, type="primary"):
+        if st.button("Ask AI", width="stretch", type="primary"):
             if user_question.strip():
                 # Add user message to history
                 user_msg = {
@@ -372,7 +372,7 @@ def render_ai_education(nebius_service):
                     st.error("Sorry, I'm having trouble responding right now. Please try again.")
 
     with col2:
-        if st.button("🗑️ Clear Chat", use_container_width=True):
+        if st.button("🗑️ Clear Chat", width="stretch"):
             st.session_state.education_chat_history = []
             st.rerun()
 
@@ -389,7 +389,7 @@ def render_ai_education(nebius_service):
     ]
 
     for question in quick_questions:
-        if st.button(question, use_container_width=True):
+        if st.button(question, width="stretch"):
             # Add user message to history
             user_msg = {
                 "role": "user",

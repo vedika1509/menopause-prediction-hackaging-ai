@@ -3,12 +3,23 @@ Predictions Page for MenoBalance AI
 Displays AI predictions with confidence intervals and visualizations.
 """
 
+import os
+import sys
+import warnings
 from datetime import datetime
 
 import numpy as np
 import plotly.graph_objects as go
-import requests
 import streamlit as st
+
+# Suppress Plotly deprecation warnings
+warnings.filterwarnings("ignore", message="The keyword arguments have been deprecated")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="plotly")
+
+# Add src directory to path for imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from prediction_service import get_prediction_service
 
 
 def render_predictions_page():
@@ -28,7 +39,7 @@ def render_predictions_page():
     # Check if health data exists
     if not st.session_state.health_data:
         st.warning("⚠️ Please complete the Health Input form first to get predictions.")
-        if st.button("Go to Health Input", use_container_width=True):
+        if st.button("Go to Health Input", width="stretch"):
             st.session_state.current_page = "Health Input"
             st.rerun()
         return
@@ -42,30 +53,49 @@ def render_predictions_page():
         display_predictions(predictions)
     else:
         st.error("❌ Failed to generate predictions. Please try again.")
-        if st.button("Retry Predictions", use_container_width=True):
+        if st.button("Retry Predictions", width="stretch"):
             st.rerun()
 
 
 def get_predictions():
-    """Get predictions from the API or fallback service."""
+    """Get predictions from the prediction service directly."""
     try:
-        # Try to get predictions from API
-        api_url = "http://localhost:8000/predict"
+        # Get prediction service
+        prediction_service = get_prediction_service()
 
-        # Prepare health data for API
+        if not prediction_service or not prediction_service.models:
+            st.warning("Models not loaded, using fallback predictions.")
+            return get_fallback_predictions(st.session_state.health_data)
+
+        # Prepare health data
         health_data = st.session_state.health_data.copy()
 
-        # Make API request
-        response = requests.post(api_url, json=health_data, timeout=30)
+        # Make predictions directly using the service
+        results = prediction_service.predict_all(health_data)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            st.warning("API not available, using fallback predictions.")
-            return get_fallback_predictions(health_data)
+        # Extract confidence intervals
+        confidence_intervals = {
+            "stage": results["predictions"]["classification"].get("confidence_interval", "N/A"),
+            "time_to_menopause": results["predictions"]["survival"].get(
+                "time_confidence_interval", "N/A"
+            ),
+            "symptom_severity": results["predictions"]["symptom"].get(
+                "severity_confidence_interval", "N/A"
+            ),
+        }
+
+        # Format results for display
+        return {
+            "success": True,
+            "predictions": results["predictions"],
+            "recommendations": results["recommendations"],
+            "timestamp": results["timestamp"],
+            "model_version": results["model_version"],
+            "confidence_intervals": confidence_intervals,
+        }
 
     except Exception as e:
-        st.warning(f"API error: {e}. Using fallback predictions.")
+        st.warning(f"Prediction service error: {e}. Using fallback predictions.")
         return get_fallback_predictions(st.session_state.health_data)
 
 
@@ -292,7 +322,11 @@ def create_stage_confidence_chart(classification_data):
 
     # Add prediction
     prediction_values = [0, 0, 0]
-    prediction_values[stage_numeric] = 1
+    # Ensure stage_numeric is an integer for list indexing
+    stage_index = int(round(stage_numeric)) if stage_numeric is not None else 0
+    # Clamp the index to valid range
+    stage_index = max(0, min(2, stage_index))
+    prediction_values[stage_index] = 1
 
     fig.add_trace(
         go.Bar(
@@ -312,7 +346,7 @@ def create_stage_confidence_chart(classification_data):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def create_time_gauge_chart(survival_data):
@@ -342,7 +376,7 @@ def create_time_gauge_chart(survival_data):
 
     fig.update_layout(height=400, font={"color": "darkblue", "family": "Arial"})
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def create_symptom_chart(symptom_data):
@@ -374,7 +408,7 @@ def create_symptom_chart(symptom_data):
         template="plotly_white",
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, config={"displayModeBar": False})
 
 
 def display_recommendations(recommendations):

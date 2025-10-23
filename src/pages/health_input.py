@@ -109,7 +109,7 @@ def render_health_input_page():
         render_medical_history_section()
 
     # Form validation and submission
-    if st.button("📊 Get My Predictions", use_container_width=True, type="primary"):
+    if st.button("📊 Get My Predictions", width="stretch", type="primary"):
         if validate_form():
             st.success("✅ Form completed successfully! Redirecting to predictions...")
             st.session_state.current_page = "Predictions"

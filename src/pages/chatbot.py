@@ -4,6 +4,7 @@ Interactive chatbot with Nebius AI integration for empathetic health support.
 """
 
 import os
+import re
 
 # Import Nebius AI service
 import sys
@@ -14,6 +15,15 @@ import streamlit as st
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from chatbot_nebius import get_nebius_service
+
+
+def strip_html_tags(text):
+    """Remove HTML tags from text."""
+    if not text:
+        return ""
+    # Remove HTML tags
+    clean = re.compile("<.*?>")
+    return re.sub(clean, "", text).strip()
 
 
 def render_chatbot_page():
@@ -71,7 +81,7 @@ def render_chat_interface(nebius_service):
                     margin-left: 2rem;
                     border-left: 4px solid #9B59B6;
                 ">
-                    <strong>You:</strong> {message["content"]}
+                    <strong>You:</strong> {strip_html_tags(message["content"])}
                     <br>
                     <small style="color: #666;">{message["timestamp"]}</small>
                 </div>
@@ -89,7 +99,7 @@ def render_chat_interface(nebius_service):
                     margin-right: 2rem;
                     border-left: 4px solid #5DADE2;
                 ">
-                    <strong>🌸 AI Assistant:</strong> {message["content"]}
+                    <strong>🌸 AI Assistant:</strong> {strip_html_tags(message["content"])}
                     <br>
                     <small style="color: #666;">{message["timestamp"]}</small>
                 </div>
@@ -98,24 +108,31 @@ def render_chat_interface(nebius_service):
                 )
 
     # Chat input
+    if "user_input" not in st.session_state:
+        st.session_state.user_input = ""
+
     user_input = st.text_area(
         "Type your message here...",
+        value=st.session_state.user_input,
         height=100,
         placeholder="Ask me about menopause symptoms, lifestyle tips, or any health concerns...",
+        key="chat_input",
     )
 
     # Send button
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("Send Message", use_container_width=True, type="primary"):
+        if st.button("Send Message", width="stretch", type="primary"):
             if user_input.strip():
                 send_message(user_input, nebius_service)
+                # Clear the input field after sending
+                st.session_state.user_input = ""
                 st.rerun()
             else:
                 st.warning("Please enter a message before sending.")
 
     # Clear chat button
-    if st.button("🗑️ Clear Chat History", use_container_width=True):
+    if st.button("🗑️ Clear Chat History", width="stretch"):
         st.session_state.chat_history = []
         st.rerun()
 
@@ -139,7 +156,7 @@ def render_quick_actions(nebius_service):
     ]
 
     for action_text, message in quick_actions:
-        if st.button(action_text, use_container_width=True, key=f"quick_{action_text}"):
+        if st.button(action_text, width="stretch", key=f"quick_{action_text}"):
             send_message(message, nebius_service)
             st.rerun()
 

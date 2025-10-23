@@ -5,9 +5,14 @@ Comprehensive menopause prediction and wellness management platform.
 
 import os
 import sys
+import warnings
 from datetime import datetime
 
 import streamlit as st
+
+# Suppress Plotly deprecation warnings
+warnings.filterwarnings("ignore", message="The keyword arguments have been deprecated")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="plotly")
 
 # Add src directory to path for imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +23,30 @@ st.set_page_config(
     page_icon="🌸",
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        "Get Help": "https://github.com/vedika1509/menopause-prediction-hackaging-ai",
+        "Report a bug": "https://github.com/vedika1509/menopause-prediction-hackaging-ai/issues",
+        "About": "# MenoBalance AI\n\n**Developed by:** Vedika Goyal\n**Email:** vedikagoyal1509@gmail.com\n\nEmpowering women through AI-driven menopause prediction and wellness management.",
+    },
+)
+
+# Force sidebar to be always visible and non-collapsible
+st.markdown(
+    """
+    <style>
+        [data-testid="collapsedControl"] {display: none;}  /* hide the two arrows */
+        section[data-testid="stSidebar"] {
+            min-width: 320px !important;
+            max-width: 320px !important;
+        }
+        /* Hide Streamlit's default page navigation menu */
+        div[data-testid="stSidebarNav"] {display: none;}
+        div[data-testid="stSidebarNav"] + div {
+            padding-top: 1rem !important;
+        }
+    </style>
+""",
+    unsafe_allow_html=True,
 )
 
 
@@ -36,6 +65,7 @@ def load_custom_css():
         padding-bottom: 2rem;
         max-width: 1200px;
     }
+    
     
     /* Header Styles */
     .main-header {
@@ -257,7 +287,7 @@ def load_custom_css():
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
+    header[data-testid="stHeader"] {visibility: hidden;}
     </style>
     """,
         unsafe_allow_html=True,
@@ -275,9 +305,6 @@ def initialize_session_state():
     if "predictions" not in st.session_state:
         st.session_state.predictions = None
 
-    if "sidebar_visible" not in st.session_state:
-        st.session_state.sidebar_visible = True
-
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -291,82 +318,49 @@ def initialize_session_state():
 def show_privacy_consent():
     """Show privacy consent modal."""
     if not st.session_state.privacy_consent:
-        # Create a single aligned privacy consent box
         st.markdown(
             """
             <div style="
-                background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
-                padding: 3rem;
-                border-radius: 25px;
-                margin: 2rem 0;
-                border: 3px solid #FF4757;
-                box-shadow: 0 20px 60px rgba(255, 71, 87, 0.4);
-                position: relative;
-                z-index: 10;
-                width: 100%;
-                box-sizing: border-box;
+                background-color: #ffdddd;
+                border: 2px solid red;
+                border-radius: 12px;
+                padding: 15px;
+                margin-top: 20px;
+                margin-bottom: 20px;
             ">
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            """
-            <h2 style="color: white; font-family: 'Poppins', sans-serif; margin-bottom: 1rem; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
-                🔒 Privacy & Data Protection
-            </h2>
-            <p style="font-family: 'Inter', sans-serif; line-height: 1.6; margin-bottom: 1.5rem; text-align: center; color: white; font-size: 1.1rem;">
-                Your privacy is our top priority. Please review our data protection practices before continuing.
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            """
-            <div style="background: rgba(255, 255, 255, 0.95); padding: 2rem; border-radius: 20px; margin-bottom: 1.5rem; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
-                <h4 style="color: #FF4757; margin-bottom: 1rem; text-align: center; font-size: 1.2rem;">🔐 Your Data Protection Promise:</h4>
-                <ul style="font-family: 'Inter', sans-serif; margin: 0; line-height: 2; color: #333;">
-                    <li>✅ <strong>Local Processing:</strong> Your health data stays on your device</li>
-                    <li>✅ <strong>No Data Sharing:</strong> We never share your personal information</li>
-                    <li>✅ <strong>AI Chat Only:</strong> Nebius AI is used only for chatbot conversations</li>
-                    <li>✅ <strong>Full Control:</strong> You can delete your data anytime</li>
-                    <li>✅ <strong>Educational Purpose:</strong> Predictions are for guidance only</li>
-                </ul>
+                <h4 style="color: #b30000; margin-bottom: 8px;">🔒 Privacy & Data Protection</h4>
+                <p style="color: #333; font-size: 15px; margin: 0;">
+                    Your privacy is our top priority. Please review our data protection practices before continuing.
+                </p>
             </div>
-            """,
+        """,
             unsafe_allow_html=True,
         )
 
-        # Add consent buttons
-        st.markdown("<div style='text-align: center; margin-top: 1rem;'>", unsafe_allow_html=True)
+        st.markdown("**Your Data Protection Promise:**")
+        st.markdown("""
+        - ✅ **Local Processing:** Your health data stays on your device
+        - ✅ **No Data Sharing:** We never share your personal information  
+        - ✅ **AI Chat Only:** Nebius AI is used only for chatbot conversations
+        - ✅ **Full Control:** You can delete your data anytime
+        - ✅ **Educational Purpose:** Predictions are for guidance only
+        """)
 
-        col_accept, col_decline = st.columns(2)
-        with col_accept:
-            if st.button(
-                "✅ I Accept & Continue",
-                use_container_width=True,
-                type="primary",
-                key="accept_privacy",
-            ):
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ I Accept & Continue", width="stretch"):
                 st.session_state.privacy_consent = True
                 st.rerun()
 
-        with col_decline:
-            if st.button("❌ Decline", use_container_width=True, key="decline_privacy"):
-                st.error(
-                    "Privacy consent is required to use MenoBalance AI. Please accept to continue."
-                )
+        with col2:
+            if st.button("❌ Decline", width="stretch"):
+                st.error("Privacy consent is required to use MenoBalance AI.")
                 st.stop()
-
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_sidebar():
     """Render the navigation sidebar."""
     with st.sidebar:
-        st.markdown("**SIDEBAR IS WORKING!**")
         st.markdown(
             """
         <div style="text-align: center; margin-bottom: 2rem;">
@@ -400,7 +394,7 @@ def render_sidebar():
         st.markdown("### Navigation")
 
         for page_name, page_id in pages.items():
-            if st.button(page_name, key=f"nav_{page_id}", use_container_width=True):
+            if st.button(page_name, key=f"nav_{page_id}", width="stretch"):
                 st.session_state.current_page = page_id
                 st.rerun()
 
@@ -411,6 +405,13 @@ def render_sidebar():
             st.success("✅ Privacy consent given")
         else:
             st.warning("⚠️ Privacy consent required")
+
+        # Developer contact
+        st.markdown("### 👩‍💻 Developer Contact")
+        st.markdown("**Vedika Goyal**")
+        st.markdown("📧 [vedikagoyal1509@gmail.com](mailto:vedikagoyal1509@gmail.com)")
+
+        st.markdown("---")
 
         # Session info
         st.markdown("### Session Info")
@@ -455,7 +456,7 @@ def render_home_page():
             "🔮 AI Predictions\n\nGet personalized predictions about menopause stage, timeline, and symptom severity with confidence intervals.\n\nClick to explore →",
             key="ai_predictions_card",
             help="Click to go to AI Predictions page",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state.current_page = "Predictions"
             st.rerun()
@@ -465,7 +466,7 @@ def render_home_page():
             "📊 Wellness Tracking\n\nMonitor your daily wellness score and track progress with interactive visualizations and insights.\n\nClick to explore →",
             key="wellness_tracking_card",
             help="Click to go to Wellness Dashboard page",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state.current_page = "Wellness Dashboard"
             st.rerun()
@@ -475,7 +476,7 @@ def render_home_page():
             "💬 AI Support\n\nChat with our empathetic AI assistant for personalized recommendations and educational content.\n\nClick to explore →",
             key="ai_support_card",
             help="Click to go to AI Chatbot page",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state.current_page = "AI Chatbot"
             st.rerun()
@@ -498,84 +499,23 @@ def render_home_page():
     )
 
     # Credits and acknowledgments
-    st.markdown(
-        """
-    <div class="card">
-        <h3 style="color: #9B59B6; text-align: center;">🙏 Special Thanks</h3>
-        <p style="font-family: 'Inter', sans-serif; text-align: center; margin-bottom: 2rem;">
-            MenoBalance AI is made possible through the support and collaboration of amazing organizations.
-        </p>
-    </div>
-    """,
-        unsafe_allow_html=True,
-    )
+    with st.container():
+        st.markdown("### 🤝 Acknowledgements")
 
-    # Partner logos and credits
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown(
-            """
-            <div class="card" style="text-align: center;">
-                <h4 style="color: #9B59B6; margin-bottom: 1rem;">OpenLongevity</h4>
-                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
-                    <h4 style="color: #9B59B6; margin: 0;">OpenLongevity</h4>
-                </div>
-                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
-                    Thanks to OpenLongevity for Hackaging AI - providing the platform and resources 
-                    that made this project possible.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.markdown("**OpenLongevity**")
+        st.write(
+            "Thanks to **OpenLongevity** for Hackaging AI — providing the platform and resources that made this project possible."
         )
 
-    with col2:
-        st.markdown(
-            """
-            <div class="card" style="text-align: center;">
-                <h4 style="color: #9B59B6; margin-bottom: 1rem;">Nebius.ai</h4>
-                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
-                    <h4 style="color: #9B59B6; margin: 0;">Nebius.ai</h4>
-                </div>
-                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
-                    Powered by Nebius.ai for AI capabilities and intelligent chatbot functionality 
-                    that enhances user experience.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.markdown("**Nebius.ai**")
+        st.write(
+            "Powered by **Nebius.ai** for AI capabilities and intelligent chatbot functionality that enhances user experience."
         )
 
-    with col3:
-        st.markdown(
-            """
-            <div class="card" style="text-align: center;">
-                <h4 style="color: #9B59B6; margin-bottom: 1rem;">AthenaDAO</h4>
-                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
-                    <h4 style="color: #9B59B6; margin: 0;">AthenaDAO</h4>
-                </div>
-                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
-                    Grateful to AthenaDAO for guidance and support in developing ethical AI 
-                    solutions for women's health.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.markdown("**AthenaDAO**")
+        st.write(
+            "Grateful to **AthenaDAO** for guidance and support in developing ethical AI solutions for women's health."
         )
-
-    # Additional acknowledgment
-    st.markdown(
-        """
-        <div class="card" style="text-align: center;">
-            <p style="font-family: 'Inter', sans-serif; font-style: italic; color: #666;">
-                "Empowering women through AI-driven health solutions, made possible by the collaborative 
-                spirit of the open-source community and our dedicated partners."
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     # Privacy notice
     if not st.session_state.privacy_consent:
@@ -591,9 +531,28 @@ def render_home_page():
 
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            if st.button("Provide Privacy Consent", use_container_width=True):
+            if st.button("Provide Privacy Consent", width="stretch"):
                 st.session_state.privacy_consent = True
                 st.rerun()
+
+    # Footer with developer info
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align: center; margin-top: 2rem; padding: 1rem; background: linear-gradient(135deg, #F8F4FF 0%, #E8DAEF 100%); border-radius: 10px;">
+            <p style="color: #9B59B6; font-family: 'Inter', sans-serif; margin: 0.5rem 0;">
+                <strong>Developed by Vedika Goyal</strong>
+            </p>
+            <p style="color: #666; font-family: 'Inter', sans-serif; margin: 0.5rem 0;">
+                📧 <a href="mailto:vedikagoyal1509@gmail.com" style="color: #9B59B6; text-decoration: none;">vedikagoyal1509@gmail.com</a>
+            </p>
+            <p style="color: #999; font-family: 'Inter', sans-serif; font-size: 0.9rem; margin: 0;">
+                Empowering women through AI-driven menopause prediction and wellness management
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def main():
