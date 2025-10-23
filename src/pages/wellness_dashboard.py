@@ -376,13 +376,13 @@ def render_wellness_dashboard():
     st.markdown("### 📊 Health Metrics Overview")
 
     metrics_fig = create_metrics_dashboard(wearable_data)
-    st.plotly_chart(metrics_fig, width="stretch")
+    st.plotly_chart(metrics_fig, config={"displayModeBar": False})
 
     # Wellness progress chart
     st.markdown("### 📈 7-Day Wellness Trend")
 
     progress_fig = create_wellness_progress_chart(wearable_data)
-    st.plotly_chart(progress_fig, width="stretch")
+    st.plotly_chart(progress_fig, config={"displayModeBar": False})
 
     # Educational tips section
     st.markdown("### 💡 Educational Tips & Insights")

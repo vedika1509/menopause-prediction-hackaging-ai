@@ -708,62 +708,65 @@ def test_api_connection():
 
 
 def get_predictions(health_data):
-    """Get predictions using integrated prediction service"""
+    """Get predictions using external API or fallback to integrated service"""
     try:
-        # Use the integrated Streamlit API
-        from api_integration import predict_menopause_streamlit
-
-        return predict_menopause_streamlit(health_data)
-    except Exception as e:
-        st.warning(f"Trained models not available: {str(e)}")
+        # Try external API first
+        from api_client import get_predictions_with_api
+        return get_predictions_with_api(health_data)
+    except ImportError:
+        # Fallback to integrated prediction service
         try:
-            # Fallback to rule-based predictions
-            from prediction_service_fallback import predict_menopause_fallback
-
-            return predict_menopause_fallback(health_data)
-        except Exception as fallback_error:
-            st.error(f"Fallback prediction failed: {str(fallback_error)}")
-            # Final fallback to demo data
-            return {
-                "survival": {
-                    "time_to_menopause_years": 3.2,
-                    "risk_level": "moderate",
-                    "confidence_interval": [2.0, 4.5],
-                    "confidence_level": 0.95,
-                    "model_confidence": 0.75,
-                    "uncertainty_measure": 0.6,
-                    "method": "demo_data",
-                },
-                "symptoms": {
-                    "severity_score": 6.5,
-                    "severity_level": "moderate",
-                    "confidence_interval": [5.0, 8.0],
-                    "confidence_level": 0.95,
-                    "model_confidence": 0.72,
-                    "uncertainty_measure": 0.8,
-                    "method": "demo_data",
-                },
-                "classification": {
-                    "predicted_class": "Peri-menopause",
-                    "confidence": 0.68,
-                    "confidence_interval": [0.55, 0.81],
-                    "confidence_level": 0.95,
-                    "probabilities": {"pre_menopause": 0.32, "peri_menopause": 0.68},
-                    "model_confidence": 0.68,
-                    "uncertainty_measure": 0.07,
-                    "method": "demo_data",
-                },
-                "recommendations": [
-                    {
-                        "priority": "high",
-                        "title": "Consult Healthcare Provider",
-                        "description": "Your symptoms suggest consultation with a healthcare provider.",
-                    }
-                ],
-                "timestamp": datetime.now().isoformat(),
-                "error": str(e),
-                "fallback_error": str(fallback_error),
-            }
+            from api_integration import predict_menopause_streamlit
+            return predict_menopause_streamlit(health_data)
+        except Exception as e:
+            st.warning(f"Trained models not available: {str(e)}")
+            try:
+                # Fallback to rule-based predictions
+                from prediction_service_fallback import predict_menopause_fallback
+                return predict_menopause_fallback(health_data)
+            except Exception as fallback_error:
+                st.error(f"Fallback prediction failed: {str(fallback_error)}")
+                # Final fallback to demo data
+                return {
+                    "survival": {
+                        "time_to_menopause_years": 3.2,
+                        "risk_level": "moderate",
+                        "confidence_interval": [2.0, 4.5],
+                        "confidence_level": 0.95,
+                        "model_confidence": 0.75,
+                        "uncertainty_measure": 0.6,
+                        "method": "demo_data",
+                    },
+                    "symptoms": {
+                        "severity_score": 6.5,
+                        "severity_level": "moderate",
+                        "confidence_interval": [5.0, 8.0],
+                        "confidence_level": 0.95,
+                        "model_confidence": 0.72,
+                        "uncertainty_measure": 0.8,
+                        "method": "demo_data",
+                    },
+                    "classification": {
+                        "predicted_class": "Peri-menopause",
+                        "confidence": 0.68,
+                        "confidence_interval": [0.55, 0.81],
+                        "confidence_level": 0.95,
+                        "probabilities": {"pre_menopause": 0.32, "peri_menopause": 0.68},
+                        "model_confidence": 0.68,
+                        "uncertainty_measure": 0.07,
+                        "method": "demo_data",
+                    },
+                    "recommendations": [
+                        {
+                            "priority": "high",
+                            "title": "Consult Healthcare Provider",
+                            "description": "Your symptoms suggest consultation with a healthcare provider.",
+                        }
+                    ],
+                    "timestamp": datetime.now().isoformat(),
+                    "error": str(e),
+                    "fallback_error": str(fallback_error),
+                }
 
 
 def render_home_page():
@@ -905,7 +908,7 @@ def render_home_page():
         st.markdown("### 📊 Your Wellness Overview")
         fig = create_wellness_score_gauge()
         if fig:
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, config={"displayModeBar": False})
         else:
             st.markdown(
                 f"""
@@ -1056,7 +1059,7 @@ def render_symptom_tracker():
         st.markdown("#### Timeline Chart")
         fig = create_symptom_timeline_chart()
         if fig:
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, config={"displayModeBar": False})
         else:
             if st.session_state.symptom_logs:
                 df = pd.DataFrame(st.session_state.symptom_logs)
@@ -1080,7 +1083,7 @@ def render_symptom_tracker():
         st.markdown("#### Symptom Frequency")
         fig2 = create_symptom_frequency_bar()
         if fig2:
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, config={"displayModeBar": False})
         else:
             if st.session_state.symptom_logs:
                 df = pd.DataFrame(st.session_state.symptom_logs)
