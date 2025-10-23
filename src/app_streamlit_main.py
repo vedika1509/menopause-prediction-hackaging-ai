@@ -18,7 +18,6 @@ st.set_page_config(
     page_icon="🌸",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items=None,  # Remove default menu items to prevent duplicate sidebar
 )
 
 
@@ -72,6 +71,10 @@ def load_custom_css():
     
     .sidebar .sidebar-content {
         background: linear-gradient(180deg, #E8DAEF 0%, #F8F4FF 100%);
+        display: block !important;
+        visibility: visible !important;
+        width: 300px !important;
+        min-width: 300px !important;
     }
     
     /* Navigation Styles */
@@ -272,6 +275,9 @@ def initialize_session_state():
     if "predictions" not in st.session_state:
         st.session_state.predictions = None
 
+    if "sidebar_visible" not in st.session_state:
+        st.session_state.sidebar_visible = True
+
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
@@ -360,6 +366,7 @@ def show_privacy_consent():
 def render_sidebar():
     """Render the navigation sidebar."""
     with st.sidebar:
+        st.markdown("**SIDEBAR IS WORKING!**")
         st.markdown(
             """
         <div style="text-align: center; margin-bottom: 2rem;">

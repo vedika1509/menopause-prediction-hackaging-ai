@@ -115,7 +115,15 @@ def render_symptom_input_form():
                 "fatigue": fatigue,
                 "joint_pain": joint_pain,
                 "notes": notes,
-                "overall_severity": (hot_flashes + night_sweats + mood_changes + sleep_disturbance + fatigue + joint_pain) / 6,
+                "overall_severity": (
+                    hot_flashes
+                    + night_sweats
+                    + mood_changes
+                    + sleep_disturbance
+                    + fatigue
+                    + joint_pain
+                )
+                / 6,
             }
 
             # Update or add today's data
@@ -199,7 +207,9 @@ def render_overall_trend_chart(df):
     if len(df) > 1:
         trend = df["overall_severity"].iloc[-1] - df["overall_severity"].iloc[0]
         if trend > 1:
-            st.warning("📈 Your symptoms are increasing. Consider consulting with your healthcare provider.")
+            st.warning(
+                "📈 Your symptoms are increasing. Consider consulting with your healthcare provider."
+            )
         elif trend < -1:
             st.success("📉 Your symptoms are decreasing. Keep up the good work!")
         else:
@@ -246,7 +256,9 @@ def render_hot_flash_chart(df):
     # Hot flash insights
     avg_hot_flashes = df["hot_flashes"].mean()
     if avg_hot_flashes > 6:
-        st.warning("🔥 You're experiencing frequent hot flashes. Consider cooling strategies and discuss with your healthcare provider.")
+        st.warning(
+            "🔥 You're experiencing frequent hot flashes. Consider cooling strategies and discuss with your healthcare provider."
+        )
     elif avg_hot_flashes > 3:
         st.info("🌡️ Moderate hot flash activity. Try layering clothes and keeping cool.")
     else:
@@ -339,7 +351,14 @@ def render_pattern_analysis():
 
     # Symptom correlation matrix
     st.markdown("#### 📊 Symptom Correlations")
-    symptom_cols = ["hot_flashes", "night_sweats", "mood_changes", "sleep_disturbance", "fatigue", "joint_pain"]
+    symptom_cols = [
+        "hot_flashes",
+        "night_sweats",
+        "mood_changes",
+        "sleep_disturbance",
+        "fatigue",
+        "joint_pain",
+    ]
     correlation_matrix = df[symptom_cols].corr()
 
     fig = go.Figure(
@@ -374,9 +393,13 @@ def render_pattern_analysis():
     if correlations:
         st.markdown("**Strong symptom correlations found:**")
         for symptom1, symptom2, corr in correlations:
-            st.markdown(f"• {symptom1.replace('_', ' ').title()} & {symptom2.replace('_', ' ').title()}: {corr:.2f}")
+            st.markdown(
+                f"• {symptom1.replace('_', ' ').title()} & {symptom2.replace('_', ' ').title()}: {corr:.2f}"
+            )
     else:
-        st.info("No strong correlations found between symptoms. This is normal - symptoms can vary independently.")
+        st.info(
+            "No strong correlations found between symptoms. This is normal - symptoms can vary independently."
+        )
 
     # Weekly patterns
     if len(df) >= 7:
@@ -412,23 +435,29 @@ def generate_sample_symptom_data():
         # Generate realistic symptom scores with some variation
         base_severity = 3 + (i % 7) * 0.5  # Slight weekly pattern
 
-        symptom_data.append({
-            "date": date,
-            "hot_flashes": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "night_sweats": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "mood_changes": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "sleep_disturbance": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "fatigue": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "joint_pain": max(0, min(10, base_severity + random.uniform(-2, 2))),
-            "notes": "",
-            "overall_severity": 0,  # Will be calculated
-        })
+        symptom_data.append(
+            {
+                "date": date,
+                "hot_flashes": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "night_sweats": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "mood_changes": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "sleep_disturbance": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "fatigue": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "joint_pain": max(0, min(10, base_severity + random.uniform(-2, 2))),
+                "notes": "",
+                "overall_severity": 0,  # Will be calculated
+            }
+        )
 
     # Calculate overall severity
     for data in symptom_data:
         data["overall_severity"] = (
-            data["hot_flashes"] + data["night_sweats"] + data["mood_changes"] + 
-            data["sleep_disturbance"] + data["fatigue"] + data["joint_pain"]
+            data["hot_flashes"]
+            + data["night_sweats"]
+            + data["mood_changes"]
+            + data["sleep_disturbance"]
+            + data["fatigue"]
+            + data["joint_pain"]
         ) / 6
 
     return symptom_data

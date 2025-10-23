@@ -3,12 +3,14 @@ Education Page for MenoBalance AI
 Educational resources and content about menopause.
 """
 
-import streamlit as st
-from datetime import datetime
+import os
 
 # Import Nebius AI service for dynamic content generation
 import sys
-import os
+from datetime import datetime
+
+import streamlit as st
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from chatbot_nebius import get_nebius_service
 
@@ -31,7 +33,14 @@ def render_education_page():
     nebius_service = get_nebius_service()
 
     # Create tabs for different educational topics
-    tab1, tab2, tab3, tab4 = st.tabs(["🔬 Understanding Menopause", "🎯 Management Strategies", "🥗 Lifestyle & Nutrition", "💡 Ask AI"])
+    tab1, tab2, tab3, tab4 = st.tabs(
+        [
+            "🔬 Understanding Menopause",
+            "🎯 Management Strategies",
+            "🥗 Lifestyle & Nutrition",
+            "💡 Ask AI",
+        ]
+    )
 
     with tab1:
         render_menopause_basics(nebius_service)
@@ -102,7 +111,7 @@ def render_menopause_basics(nebius_service):
 
     # Common symptoms
     st.markdown("#### 🌡️ Common Symptoms")
-    
+
     symptoms = [
         ("🔥 Hot Flashes", "Sudden feelings of heat, often with sweating and flushing"),
         ("😴 Sleep Disturbances", "Difficulty falling asleep or staying asleep"),
@@ -123,7 +132,7 @@ def render_menopause_basics(nebius_service):
         with st.spinner("Generating personalized content..."):
             content = nebius_service.generate_educational_content("menopause stages and symptoms")
             st.markdown(f"**{content['title']}**")
-            st.markdown(content['content'])
+            st.markdown(content["content"])
 
 
 def render_management_strategies(nebius_service):
@@ -139,37 +148,37 @@ def render_management_strategies(nebius_service):
             "description": "Estrogen and progesterone replacement to manage symptoms",
             "pros": ["Effective for hot flashes", "Prevents bone loss", "Improves sleep"],
             "cons": ["Risk of blood clots", "Breast cancer risk", "Not for everyone"],
-            "color": "#4CAF50"
+            "color": "#4CAF50",
         },
         {
             "title": "Non-Hormonal Medications",
             "description": "Alternative medications for symptom management",
             "pros": ["Lower risk profile", "Good for specific symptoms", "Fewer side effects"],
             "cons": ["May be less effective", "Multiple medications needed", "Cost considerations"],
-            "color": "#2196F3"
+            "color": "#2196F3",
         },
         {
             "title": "Lifestyle Modifications",
             "description": "Natural approaches to symptom management",
             "pros": ["No side effects", "Improves overall health", "Cost-effective"],
             "cons": ["May take longer to work", "Requires commitment", "Results vary"],
-            "color": "#FF9800"
-        }
+            "color": "#FF9800",
+        },
     ]
 
     for treatment in treatments:
         with st.expander(f"{treatment['title']}"):
             st.markdown(f"**{treatment['description']}**")
-            
+
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("**Pros:**")
-                for pro in treatment['pros']:
+                for pro in treatment["pros"]:
                     st.markdown(f"✅ {pro}")
-            
+
             with col2:
                 st.markdown("**Cons:**")
-                for con in treatment['cons']:
+                for con in treatment["cons"]:
                     st.markdown(f"❌ {con}")
 
     # Natural remedies
@@ -192,7 +201,7 @@ def render_management_strategies(nebius_service):
         with st.spinner("Generating personalized recommendations..."):
             content = nebius_service.generate_educational_content("menopause management strategies")
             st.markdown(f"**{content['title']}**")
-            st.markdown(content['content'])
+            st.markdown(content["content"])
 
 
 def render_lifestyle_nutrition(nebius_service):
@@ -206,30 +215,30 @@ def render_lifestyle_nutrition(nebius_service):
         {
             "category": "Calcium-Rich Foods",
             "foods": ["Dairy products", "Leafy greens", "Fortified foods", "Sardines"],
-            "benefit": "Supports bone health during menopause"
+            "benefit": "Supports bone health during menopause",
         },
         {
             "category": "Phytoestrogens",
             "foods": ["Soy products", "Flaxseeds", "Chickpeas", "Lentils"],
-            "benefit": "May help balance hormones naturally"
+            "benefit": "May help balance hormones naturally",
         },
         {
             "category": "Omega-3 Fatty Acids",
             "foods": ["Fatty fish", "Walnuts", "Chia seeds", "Flaxseeds"],
-            "benefit": "Reduces inflammation and supports heart health"
+            "benefit": "Reduces inflammation and supports heart health",
         },
         {
             "category": "Antioxidant-Rich Foods",
             "foods": ["Berries", "Dark leafy greens", "Nuts", "Colorful vegetables"],
-            "benefit": "Protects against oxidative stress and aging"
-        }
+            "benefit": "Protects against oxidative stress and aging",
+        },
     ]
 
     for tip in nutrition_tips:
-        with st.expander(tip['category']):
+        with st.expander(tip["category"]):
             st.markdown(f"**Benefit:** {tip['benefit']}")
             st.markdown("**Foods to include:**")
-            for food in tip['foods']:
+            for food in tip["foods"]:
                 st.markdown(f"• {food}")
 
     # Exercise recommendations
@@ -267,16 +276,20 @@ def render_lifestyle_nutrition(nebius_service):
     # Generate personalized nutrition plan
     if st.button("🍎 Get Personalized Nutrition Plan", use_container_width=True):
         with st.spinner("Generating personalized nutrition recommendations..."):
-            content = nebius_service.generate_educational_content("menopause nutrition and lifestyle")
+            content = nebius_service.generate_educational_content(
+                "menopause nutrition and lifestyle"
+            )
             st.markdown(f"**{content['title']}**")
-            st.markdown(content['content'])
+            st.markdown(content["content"])
 
 
 def render_ai_education(nebius_service):
     """Render AI-powered educational content."""
     st.markdown("### 💡 Ask AI About Menopause")
 
-    st.markdown("Ask our AI assistant any questions about menopause, symptoms, or management strategies.")
+    st.markdown(
+        "Ask our AI assistant any questions about menopause, symptoms, or management strategies."
+    )
 
     # Chat interface for educational questions
     if "education_chat_history" not in st.session_state:
@@ -344,7 +357,7 @@ def render_ai_education(nebius_service):
                 try:
                     with st.spinner("AI is thinking..."):
                         ai_response = nebius_service.chat(user_question, {"context": "education"})
-                    
+
                     # Add AI response to history
                     ai_msg = {
                         "role": "assistant",
@@ -352,10 +365,10 @@ def render_ai_education(nebius_service):
                         "timestamp": datetime.now().strftime("%H:%M:%S"),
                     }
                     st.session_state.education_chat_history.append(ai_msg)
-                    
+
                     st.rerun()
-                    
-                except Exception as e:
+
+                except Exception:
                     st.error("Sorry, I'm having trouble responding right now. Please try again.")
 
     with col2:
@@ -365,7 +378,7 @@ def render_ai_education(nebius_service):
 
     # Quick question suggestions
     st.markdown("#### 💡 Quick Question Suggestions")
-    
+
     quick_questions = [
         "What are the stages of menopause?",
         "How can I manage hot flashes naturally?",
@@ -389,7 +402,7 @@ def render_ai_education(nebius_service):
             try:
                 with st.spinner("AI is thinking..."):
                     ai_response = nebius_service.chat(question, {"context": "education"})
-                
+
                 # Add AI response to history
                 ai_msg = {
                     "role": "assistant",
@@ -397,10 +410,10 @@ def render_ai_education(nebius_service):
                     "timestamp": datetime.now().strftime("%H:%M:%S"),
                 }
                 st.session_state.education_chat_history.append(ai_msg)
-                
+
                 st.rerun()
-                
-            except Exception as e:
+
+            except Exception:
                 st.error("Sorry, I'm having trouble responding right now. Please try again.")
 
     # Educational disclaimer
