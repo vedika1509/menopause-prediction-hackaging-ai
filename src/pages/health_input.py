@@ -47,7 +47,7 @@ def validate_hormone_value(value, hormone_name, min_val=0, max_val=1000):
 
 def calculate_bmi(weight, height):
     """Calculate BMI from weight and height."""
-    if weight and height and height > 0:
+    if weight is not None and height is not None and height > 0:
         height_m = height / 100  # Convert cm to meters
         return round(weight / (height_m**2), 1)
     return None
@@ -215,9 +215,9 @@ def render_hormones_section():
     # Store data
     st.session_state.health_data.update(
         {
-            "fsh": fsh if fsh > 0 else None,
-            "amh": amh if amh > 0 else None,
-            "estradiol": estradiol if estradiol > 0 else None,
+            "fsh": fsh if fsh is not None and fsh > 0 else None,
+            "amh": amh if amh is not None and amh > 0 else None,
+            "estradiol": estradiol if estradiol is not None and estradiol > 0 else None,
             "regular_cycles": regular_cycles == "Regular",
             "hormones_completed": True,
         }

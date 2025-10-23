@@ -18,11 +18,7 @@ st.set_page_config(
     page_icon="🌸",
     layout="wide",
     initial_sidebar_state="expanded",
-    menu_items={
-        "Get Help": "https://github.com/vedika1509/menopause-prediction-hackaging-ai",
-        "Report a bug": "https://github.com/vedika1509/menopause-prediction-hackaging-ai/issues",
-        "About": "# MenoBalance AI\nEmpowering women through AI-driven menopause prediction and wellness management.",
-    },
+    menu_items=None,  # Remove default menu items to prevent duplicate sidebar
 )
 
 
@@ -122,6 +118,11 @@ def load_custom_css():
         color: #9B59B6;
         margin-bottom: 1rem;
         font-size: 1.3rem;
+        text-decoration: none !important;
+    }
+    
+    .card-title::after {
+        content: none !important;
     }
     
     /* Button Styles */
@@ -284,49 +285,76 @@ def initialize_session_state():
 def show_privacy_consent():
     """Show privacy consent modal."""
     if not st.session_state.privacy_consent:
-        with st.container():
-            st.markdown(
-                """
+        # Create a single aligned privacy consent box
+        st.markdown(
+            """
             <div style="
-                position: fixed;
-                top: 0;
-                left: 0;
+                background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+                padding: 3rem;
+                border-radius: 25px;
+                margin: 2rem 0;
+                border: 3px solid #FF4757;
+                box-shadow: 0 20px 60px rgba(255, 71, 87, 0.4);
+                position: relative;
+                z-index: 10;
                 width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                box-sizing: border-box;
             ">
-                <div style="
-                    background: white;
-                    padding: 2rem;
-                    border-radius: 15px;
-                    max-width: 600px;
-                    margin: 1rem;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-                ">
-                    <h2 style="color: #9B59B6; font-family: 'Poppins', sans-serif; margin-bottom: 1rem;">
-                        🌸 Welcome to MenoBalance AI
-                    </h2>
-                    <p style="font-family: 'Inter', sans-serif; line-height: 1.6; margin-bottom: 1.5rem;">
-                        We're committed to protecting your privacy and providing compassionate support during your menopause journey.
-                    </p>
-                    <div style="background: #F8F4FF; padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
-                        <h4 style="color: #9B59B6; margin-bottom: 0.5rem;">Your Privacy Matters:</h4>
-                        <ul style="font-family: 'Inter', sans-serif; margin: 0;">
-                            <li>Your data stays on your device and is never shared</li>
-                            <li>We only use Nebius AI for chatbot conversations</li>
-                            <li>You can delete your data at any time</li>
-                            <li>All predictions are for educational purposes only</li>
-                        </ul>
-                    </div>
-                </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <h2 style="color: white; font-family: 'Poppins', sans-serif; margin-bottom: 1rem; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                🔒 Privacy & Data Protection
+            </h2>
+            <p style="font-family: 'Inter', sans-serif; line-height: 1.6; margin-bottom: 1.5rem; text-align: center; color: white; font-size: 1.1rem;">
+                Your privacy is our top priority. Please review our data protection practices before continuing.
+            </p>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div style="background: rgba(255, 255, 255, 0.95); padding: 2rem; border-radius: 20px; margin-bottom: 1.5rem; box-shadow: 0 8px 25px rgba(0,0,0,0.15);">
+                <h4 style="color: #FF4757; margin-bottom: 1rem; text-align: center; font-size: 1.2rem;">🔐 Your Data Protection Promise:</h4>
+                <ul style="font-family: 'Inter', sans-serif; margin: 0; line-height: 2; color: #333;">
+                    <li>✅ <strong>Local Processing:</strong> Your health data stays on your device</li>
+                    <li>✅ <strong>No Data Sharing:</strong> We never share your personal information</li>
+                    <li>✅ <strong>AI Chat Only:</strong> Nebius AI is used only for chatbot conversations</li>
+                    <li>✅ <strong>Full Control:</strong> You can delete your data anytime</li>
+                    <li>✅ <strong>Educational Purpose:</strong> Predictions are for guidance only</li>
+                </ul>
             </div>
             """,
-                unsafe_allow_html=True,
-            )
+            unsafe_allow_html=True,
+        )
+
+        # Add consent buttons
+        st.markdown("<div style='text-align: center; margin-top: 1rem;'>", unsafe_allow_html=True)
+
+        col_accept, col_decline = st.columns(2)
+        with col_accept:
+            if st.button(
+                "✅ I Accept & Continue",
+                use_container_width=True,
+                type="primary",
+                key="accept_privacy",
+            ):
+                st.session_state.privacy_consent = True
+                st.rerun()
+
+        with col_decline:
+            if st.button("❌ Decline", use_container_width=True, key="decline_privacy"):
+                st.error(
+                    "Privacy consent is required to use MenoBalance AI. Please accept to continue."
+                )
+                st.stop()
+
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_sidebar():
@@ -401,7 +429,7 @@ def render_home_page():
     st.markdown(
         """
     <div class="card">
-        <h2 class="card-title">Welcome to Your Health Journey</h2>
+        <h2 class="card-title" style="text-decoration: none; color: #9B59B6;">Welcome to Your Health Journey</h2>
         <p style="font-family: 'Inter', sans-serif; font-size: 1.1rem; line-height: 1.6;">
             MenoBalance AI is designed to provide compassionate support and evidence-based insights 
             during your menopause transition. Our AI-powered platform helps you understand your body's 
@@ -416,37 +444,34 @@ def render_home_page():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(
-            """
-        <div class="card">
-            <h3 style="color: #9B59B6;">🔮 AI Predictions</h3>
-            <p>Get personalized predictions about menopause stage, timeline, and symptom severity with confidence intervals.</p>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        if st.button(
+            "🔮 AI Predictions\n\nGet personalized predictions about menopause stage, timeline, and symptom severity with confidence intervals.\n\nClick to explore →",
+            key="ai_predictions_card",
+            help="Click to go to AI Predictions page",
+            use_container_width=True,
+        ):
+            st.session_state.current_page = "Predictions"
+            st.rerun()
 
     with col2:
-        st.markdown(
-            """
-        <div class="card">
-            <h3 style="color: #9B59B6;">📊 Wellness Tracking</h3>
-            <p>Monitor your daily wellness score and track progress with interactive visualizations and insights.</p>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        if st.button(
+            "📊 Wellness Tracking\n\nMonitor your daily wellness score and track progress with interactive visualizations and insights.\n\nClick to explore →",
+            key="wellness_tracking_card",
+            help="Click to go to Wellness Dashboard page",
+            use_container_width=True,
+        ):
+            st.session_state.current_page = "Wellness Dashboard"
+            st.rerun()
 
     with col3:
-        st.markdown(
-            """
-        <div class="card">
-            <h3 style="color: #9B59B6;">💬 AI Support</h3>
-            <p>Chat with our empathetic AI assistant for personalized recommendations and educational content.</p>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+        if st.button(
+            "💬 AI Support\n\nChat with our empathetic AI assistant for personalized recommendations and educational content.\n\nClick to explore →",
+            key="ai_support_card",
+            help="Click to go to AI Chatbot page",
+            use_container_width=True,
+        ):
+            st.session_state.current_page = "AI Chatbot"
+            st.rerun()
 
     # Quick start guide
     st.markdown(
@@ -462,6 +487,86 @@ def render_home_page():
         </ol>
     </div>
     """,
+        unsafe_allow_html=True,
+    )
+
+    # Credits and acknowledgments
+    st.markdown(
+        """
+    <div class="card">
+        <h3 style="color: #9B59B6; text-align: center;">🙏 Special Thanks</h3>
+        <p style="font-family: 'Inter', sans-serif; text-align: center; margin-bottom: 2rem;">
+            MenoBalance AI is made possible through the support and collaboration of amazing organizations.
+        </p>
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    # Partner logos and credits
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(
+            """
+            <div class="card" style="text-align: center;">
+                <h4 style="color: #9B59B6; margin-bottom: 1rem;">OpenLongevity</h4>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+                    <h4 style="color: #9B59B6; margin: 0;">OpenLongevity</h4>
+                </div>
+                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
+                    Thanks to OpenLongevity for Hackaging AI - providing the platform and resources 
+                    that made this project possible.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            """
+            <div class="card" style="text-align: center;">
+                <h4 style="color: #9B59B6; margin-bottom: 1rem;">Nebius.ai</h4>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+                    <h4 style="color: #9B59B6; margin: 0;">Nebius.ai</h4>
+                </div>
+                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
+                    Powered by Nebius.ai for AI capabilities and intelligent chatbot functionality 
+                    that enhances user experience.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+        st.markdown(
+            """
+            <div class="card" style="text-align: center;">
+                <h4 style="color: #9B59B6; margin-bottom: 1rem;">AthenaDAO</h4>
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem; text-align: center;">
+                    <h4 style="color: #9B59B6; margin: 0;">AthenaDAO</h4>
+                </div>
+                <p style="font-family: 'Inter', sans-serif; font-size: 0.9rem;">
+                    Grateful to AthenaDAO for guidance and support in developing ethical AI 
+                    solutions for women's health.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Additional acknowledgment
+    st.markdown(
+        """
+        <div class="card" style="text-align: center;">
+            <p style="font-family: 'Inter', sans-serif; font-style: italic; color: #666;">
+                "Empowering women through AI-driven health solutions, made possible by the collaborative 
+                spirit of the open-source community and our dedicated partners."
+            </p>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
