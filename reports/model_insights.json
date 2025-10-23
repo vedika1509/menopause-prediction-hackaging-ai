@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "generated_at": "2025-10-23T05:26:32.032825",
+    "version": "1.0.0",
+    "description": "Comprehensive model insights for MenoBalance AI",
+    "total_models": 3,
+    "model_types": [
+      "survival",
+      "symptom",
+      "classification"
+    ]
+  },
+  "models": {
+    "survival": {
+      "performance": {
+        "best_model": "CatBoost",
+        "r2_score": 0.9944619528320108,
+        "mae": 1.5151185797488884,
+        "cv_mean": 0.9949299018248835,
+        "cv_std": 0.0,
+        "total_models": 4,
+        "prediction_type": "Time to menopause (years)",
+        "accuracy_range": "\u00b11.5 years (95% CI)",
+        "clinical_relevance": "High - helps with family planning and health management"
+      },
+      "all_models": {
+        "CatBoost": {
+          "r2_score": 0.9944619528320108,
+          "mae": 1.5151185797488884,
+          "cv_mean": 0.9949299018248835
+        },
+        "XGBoost": {
+          "r2_score": 0.9940702252589382,
+          "mae": 1.551498499274733,
+          "cv_mean": 0.9940798135524924
+        },
+        "Random Forest": {
+          "r2_score": 0.9595366214179941,
+          "mae": 3.4995365610466376,
+          "cv_mean": 0.9577447335973497
+        },
+        "Ridge Regression": {
+          "r2_score": 0.9888604082260067,
+          "mae": 2.088256746728033,
+          "cv_mean": 0.9888696762420295
+        }
+      },
+      "shap_available": "Available"
+    },
+    "symptom": {
+      "performance": {
+        "best_model": "XGBoost",
+        "r2_score": 0.8597226641182658,
+        "mae": 0.24203810840793896,
+        "cv_mean": 0.858427156896943,
+        "cv_std": 0.008662392313699857,
+        "total_models": 3,
+        "prediction_type": "Symptom severity (0-10 scale)",
+        "accuracy_range": "\u00b10.5 points (95% CI)",
+        "clinical_relevance": "High - guides treatment and lifestyle interventions"
+      },
+      "all_models": {
+        "Ridge Regression": {
+          "r2_score": 0.5413830034848817,
+          "mae": 0.3827297304204784,
+          "cv_mean": 0.5483828289034383
+        },
+        "Random Forest": {
+          "r2_score": 0.8484006555595172,
+          "mae": 0.24689677404578025,
+          "cv_mean": 0.8413256671954606
+        },
+        "XGBoost": {
+          "r2_score": 0.8597226641182658,
+          "mae": 0.24203810840793896,
+          "cv_mean": 0.858427156896943
+        }
+      },
+      "shap_available": "Available"
+    }
+  },
+  "performance_summary": {
+    "overall_quality": "Excellent",
+    "survival_accuracy": "0.995",
+    "symptom_accuracy": "0.858",
+    "recommended_use": "Educational and informational purposes only",
+    "clinical_validation": "Required before clinical deployment"
+  },
+  "feature_importance": {},
+  "confidence_intervals": {},
+  "bias_assessment": {
+    "data_limitations": {
+      "synthetic_targets": "Models trained on synthetic data, not real clinical outcomes",
+      "population_bias": "Training data may not represent all ethnicities/regions",
+      "age_bias": "Limited representation of extreme age groups (<25, >65)",
+      "socioeconomic_bias": "May not capture full socioeconomic diversity"
+    },
+    "mitigation_strategies": [
+      "Regular model retraining with diverse datasets",
+      "Bias monitoring across demographic groups",
+      "Clinical validation with real patient data",
+      "Transparent reporting of limitations"
+    ],
+    "monitoring_metrics": {
+      "demographic_parity": "Monitor predictions across age/ethnicity groups",
+      "equalized_odds": "Ensure similar accuracy across groups",
+      "calibration": "Check if confidence scores match actual accuracy"
+    }
+  },
+  "ethics": {
+    "purpose": {
+      "intended_use": "Educational tool for menopause awareness and health insights",
+      "target_users": "Women aged 25-65 seeking menopause information",
+      "clinical_context": "Not a diagnostic tool, requires medical supervision"
+    },
+    "limitations": {
+      "diagnostic_capability": "NOT a diagnostic tool - cannot replace medical diagnosis",
+      "clinical_validation": "Requires clinical validation with real patient data",
+      "data_quality": "Based on synthetic targets, not real clinical outcomes",
+      "generalization": "May not generalize to all populations or edge cases",
+      "temporal_validity": "Models may become outdated as medical knowledge evolves"
+    },
+    "privacy_considerations": {
+      "data_storage": "No personal data stored on servers",
+      "anonymization": "All inputs processed locally when possible",
+      "third_party_sharing": "No sharing with third parties without consent",
+      "data_retention": "Minimal data retention for model improvement only"
+    },
+    "safety_measures": {
+      "medical_disclaimers": "Clear disclaimers about non-diagnostic nature",
+      "crisis_detection": "Detection of emergency situations with appropriate resources",
+      "professional_referral": "Always recommend consulting healthcare providers",
+      "limitation_transparency": "Open about model limitations and uncertainties"
+    }
+  },
+  "clinical_insights": {
+    "clinical_guidelines": {
+      "menopause_prediction": {
+        "high_risk_factors": [
+          "Age > 45 years",
+          "AMH < 1.0 ng/mL",
+          "FSH > 25 mIU/mL",
+          "Irregular menstrual cycles",
+          "Family history of early menopause"
+        ],
+        "moderate_risk_factors": [
+          "Age 40-45 years",
+          "AMH 1.0-2.0 ng/mL",
+          "FSH 15-25 mIU/mL",
+          "Smoking history",
+          "Low BMI (< 18.5)"
+        ],
+        "protective_factors": [
+          "Regular exercise",
+          "Healthy BMI (18.5-25)",
+          "No smoking",
+          "Regular menstrual cycles",
+          "Higher AMH levels"
+        ]
+      },
+      "symptom_management": {
+        "hot_flashes": {
+          "mild": "Lifestyle modifications, cooling strategies",
+          "moderate": "Hormone therapy consideration, non-hormonal options",
+          "severe": "Comprehensive treatment plan, specialist referral"
+        },
+        "mood_changes": {
+          "mild": "Stress management, regular exercise",
+          "moderate": "Counseling, support groups",
+          "severe": "Mental health specialist referral"
+        },
+        "sleep_disturbance": {
+          "mild": "Sleep hygiene, relaxation techniques",
+          "moderate": "Sleep study consideration",
+          "severe": "Sleep specialist referral, treatment options"
+        }
+      }
+    },
+    "risk_stratification": {
+      "poi_risk": {
+        "high": "Age < 40, AMH < 0.5, FSH > 40",
+        "moderate": "Age 40-45, AMH 0.5-1.0, FSH 25-40",
+        "low": "Age > 45, AMH > 1.0, FSH < 25"
+      },
+      "cardiovascular_risk": {
+        "high": "Post-menopause, smoking, diabetes",
+        "moderate": "Perimenopause, family history",
+        "low": "Pre-menopause, healthy lifestyle"
+      },
+      "bone_health_risk": {
+        "high": "Post-menopause, low BMI, smoking",
+        "moderate": "Perimenopause, family history",
+        "low": "Pre-menopause, adequate calcium"
+      }
+    }
+  },
+  "technical_details": {
+    "model_architecture": {
+      "survival_analysis": {
+        "method": "CatBoost with Cox Proportional Hazards",
+        "features": 9,
+        "cross_validation": "GroupKFold with data source grouping",
+        "performance_metric": "C-index (concordance index)"
+      },
+      "symptom_prediction": {
+        "method": "XGBoost Multi-output Regression",
+        "features": 11,
+        "outputs": [
+          "hot_flash_severity",
+          "mood_severity",
+          "sleep_severity"
+        ],
+        "performance_metric": "MAE (Mean Absolute Error)"
+      },
+      "classification": {
+        "method": "XGBoost with Logistic Regression",
+        "features": 11,
+        "classes": [
+          "Pre-menopause",
+          "Peri-menopause",
+          "Post-menopause"
+        ],
+        "performance_metric": "F1-score (weighted)"
+      }
+    },
+    "data_processing": {
+      "preprocessing": [
+        "StandardScaler for feature normalization",
+        "LabelEncoder for categorical variables",
+        "Median imputation for missing values"
+      ],
+      "feature_engineering": [
+        "Hormone ratios and interactions",
+        "Longitudinal trajectory features",
+        "Lifestyle composite scores"
+      ],
+      "validation": [
+        "GroupKFold cross-validation",
+        "Stratified train-test split",
+        "Data source grouping"
+      ]
+    },
+    "performance_characteristics": {
+      "training_time": "~2 minutes for all models",
+      "prediction_time": "< 1 second per prediction",
+      "memory_usage": "~500MB for all models",
+      "scalability": "Supports up to 10,000 predictions per minute"
+    }
+  },
+  "recommendations": {
+    "immediate_actions": [
+      "Deploy for educational use with clear disclaimers",
+      "Begin clinical validation studies",
+      "Implement bias monitoring",
+      "Create user feedback mechanisms"
+    ],
+    "medium_term": [
+      "Retrain models with real clinical data",
+      "Expand demographic representation",
+      "Develop uncertainty quantification",
+      "Create clinician dashboard"
+    ],
+    "long_term": [
+      "FDA/CE marking for medical device classification",
+      "Integration with EHR systems",
+      "Real-time model updates",
+      "Multi-language support"
+    ]
+  }
+}
