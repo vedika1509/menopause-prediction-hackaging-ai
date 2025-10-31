@@ -7,7 +7,7 @@
 
 **Author:** Vedika  
 **Project:** Hackaging AI - MenoBalance AI Platform  
-
+**Contact** vedikagoyal1509@gmail.com
 A comprehensive AI-powered platform for menopause prediction, symptom tracking, and wellness management with empathetic design and educational support. This project integrates multiple datasets and advanced machine learning techniques to provide personalized predictions and wellness guidance for women experiencing menopause.
 
 ## 🌟 Key Features
